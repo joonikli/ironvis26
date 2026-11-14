@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>IronViz dashboard draft</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F6F3}
+a{color:#1D5FBF}a:hover{color:#123F80}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; color: #1A1A1A; background: #F6F6F3; min-height: 100%; padding: 40px 24px 64px; box-sizing: border-box">
+<div style="max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px">
+
+<!-- HEADER -->
+<header style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; background: #FFF4D6; color: #6B4A00; border: 1px solid #E8C870; padding: 4px 10px; border-radius: 999px">Draft layout for review, not the final design</span>
+<span style="font-size: 12px; color: #4A4A4A">As of Oct 2026 · synthetic data · energy and carbon are estimates</span>
+</div>
+<h1 style="margin: 0; font-family: 'Space Grotesk', Inter, sans-serif; font-size: 40px; line-height: 1.1; font-weight: 700; max-width: 900px">Two CMU groups use AI the expensive way. The other four already show what good looks like.</h1>
+<p style="margin: 0; font-size: 16px; line-height: 1.5; color: #3F3F3F; max-width: 820px">AI requests across 6 campus groups, Oct 1–30, 2026. How can each group cut cost and energy with habits that still hold when the models change?</p>
+</header>
+
+<!-- KPI ROW (problem) -->
+<section aria-label="30-day totals" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px">
+<div style="background: #FFFFFF; border: 1px solid #E2E2DD; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 13px; color: #4A4A4A">AI requests (30 days)</span>
+<span style="font-family: 'Space Grotesk', sans-serif; font-size: 34px; font-weight: 600">202,650</span>
+<span style="font-size: 13px; color: #4A4A4A">6 groups · OpenAI and Gemini</span>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E2E2DD; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 13px; color: #4A4A4A">Cost at list prices</span>
+<span style="font-family: 'Space Grotesk', sans-serif; font-size: 34px; font-weight: 600">$5,711</span>
+<span style="font-size: 13px; color: #4A4A4A">Caching already saved $235</span>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E2E2DD; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 13px; color: #4A4A4A">Electricity (estimate)</span>
+<span style="font-family: 'Space Grotesk', sans-serif; font-size: 34px; font-weight: 600">387 kWh</span>
+<span style="font-size: 13px; color: #4A4A4A">Range 277–496 kWh</span>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E2E2DD; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 13px; color: #4A4A4A">Carbon (estimate)</span>
+<span style="font-family: 'Space Grotesk', sans-serif; font-size: 34px; font-weight: 600">135 kg CO₂e</span>
+<span style="font-size: 13px; color: #4A4A4A">Range 26–292 kg · depends on grid</span>
+</div>
+</section>
+
+<!-- CHART 1: PROBLEM -->
+<section style="background: #FFFFFF; border: 1px solid #E2E2DD; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #4A4A4A">1 · The problem</span>
+<h2 style="margin: 0; font-size: 22px; font-weight: 600">Engineering/Dev and Sandbox pay up to 2× more per request, send prompts up to 3.8× bigger, fail 5× as often, and reuse 8× less cached text</h2>
+<p style="margin: 0; font-size: 14px; color: #4A4A4A">Each bar is one group, as a multiple of CMU's best group on the same provider ("local good" = 1×, the dark line). Taller = worse. The other four groups stop at the 1× line. Hover a bar for its actual value.</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 18px; font-size: 13px">
+<sc-for list="{{p1Legend}}" as="lg" hint-placeholder-count="6">
+<span style="display: flex; align-items: center; gap: 6px"><span style="{{lg.sw}}"></span>{{lg.name}}</span>
+</sc-for>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 2px; height: 14px; background: #1A1A1A"></span>Local good (1×)</span>
+</div>
+<div style="overflow-x: auto">
+<div style="min-width: 760px; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 8px">
+<div style="position: relative; height: 320px; font-size: 12px; color: #4A4A4A">
+<span style="position: absolute; right: 0; bottom: -7px">0×</span>
+<span style="position: absolute; right: 0; bottom: calc(11.11% - 7px); font-weight: 700; color: #1A1A1A">1×</span>
+<span style="position: absolute; right: 0; bottom: calc(33.33% - 7px)">3×</span>
+<span style="position: absolute; right: 0; bottom: calc(55.56% - 7px)">5×</span>
+<span style="position: absolute; right: 0; bottom: calc(77.78% - 7px)">7×</span>
+<span style="position: absolute; right: 0; bottom: calc(100% - 7px)">9×</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="position: relative; height: 320px; border-bottom: 1px solid #1A1A1A">
+<div style="position: absolute; left: 0; right: 0; bottom: 33.33%; border-top: 1px solid #EFEFEA"></div>
+<div style="position: absolute; left: 0; right: 0; bottom: 55.56%; border-top: 1px solid #EFEFEA"></div>
+<div style="position: absolute; left: 0; right: 0; bottom: 77.78%; border-top: 1px solid #EFEFEA"></div>
+<div style="position: absolute; left: 0; right: 0; bottom: 100%; border-top: 1px solid #EFEFEA"></div>
+<div style="position: absolute; inset: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 28px; padding: 0 12px">
+<sc-for list="{{problemRows}}" as="row" hint-placeholder-count="5">
+<div style="display: flex; align-items: flex-end; justify-content: center; gap: 4px; height: 100%">
+<sc-for list="{{row.bars}}" as="b" hint-placeholder-count="6">
+<div title="{{b.tip}}" style="flex: 1 1 0; max-width: 26px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 3px">
+<span style="{{b.labStyle}}">{{b.lab}}</span>
+<div style="{{b.style}}"></div>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+<div style="position: absolute; left: 0; right: 0; bottom: 11.11%; border-top: 2px solid #1A1A1A; pointer-events: none"></div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 28px; padding: 0 12px">
+<sc-for list="{{problemRows}}" as="row" hint-placeholder-count="5">
+<div style="display: flex; flex-direction: column; gap: 6px; align-items: center; text-align: center">
+<div style="display: flex; justify-content: center; gap: 4px; width: 100%">
+<sc-for list="{{row.bars}}" as="b" hint-placeholder-count="6">
+<span style="flex: 1 1 0; max-width: 26px; display: flex; justify-content: center"><span style="{{b.mark}}"></span></span>
+</sc-for>
+</div>
+<span style="font-size: 13px; font-weight: 600">{{row.label}}</span>
+<span style="font-size: 12px; color: #3F3F3F">{{row.note}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</div>
+<p style="margin: 0; font-size: 12px; color: #4A4A4A">Reuse from cache is shown as "× less" than the best group, so taller is still worse. Best group on the same provider: 22.6% (OpenAI), 19.4% (Gemini).</p>
+</section>
+
+<!-- CHART 2: PERSONA BREAKDOWN (filterable) -->
+
+
+<!-- CHART 3: HIDDEN DRIVER = E8 (D26, D27) -->
+<section aria-labelledby="e8-title" style="background: #FFFFFF; border: 1px solid #E2E2DD; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #4A4A4A">3 · Hidden driver: the price of a model choice</span>
+<h2 id="e8-title" style="margin: 0; font-size: 22px; font-weight: 600">Out of every 100 OpenAI requests, 10 used the reasoning model, and they ran up 65 of every 100 dollars</h2>
+<p style="margin: 0; font-size: 14px; color: #4A4A4A">How to read: three model types are compared. Each grid has 100 symbols (blocks = requests, $ coins = dollars, lightbulbs = watt-hours), shaded by model type from heaviest (darkest) to lightest (palest), so you can see how requests, cost and energy split. OpenAI groups only; the Gemini groups have no reasoning model in the data.</p>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px">
+<sc-for list="{{e8Keys}}" as="k" hint-placeholder-count="3">
+<div style="display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; align-items: start; padding: 12px 14px; border: 1px solid #E2E2DD; border-radius: 10px">
+<span style="{{k.sw}}"></span>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 15px; font-weight: 600">{{k.label}}</span>
+<span style="font-size: 13px; color: #3F3F3F">{{k.model}} · {{k.purpose}}</span>
+<span style="font-size: 13px; line-height: 1.45; color: #2A2A2A">{{k.explain}}</span>
+<span style="font-size: 13px; font-variant-numeric: tabular-nums; color: #1A1A1A">{{k.per}}</span>
+</div>
+</div>
+</sc-for>
+</div>
+<div role="img" aria-label="Three 10 by 10 grids. Of every 100 OpenAI requests: reasoning 10, frontier 48, small/fast 42. Of every 100 dollars: reasoning 65, frontier 34, small/fast 1. Of every 100 estimated watt-hours: reasoning 32, frontier 42, small/fast 26." style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 28px">
+<sc-for list="{{e8Grids}}" as="g" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span style="font-family: 'Space Grotesk', Inter, sans-serif; font-size: 18px; font-weight: 600">{{g.title}} <span style="font-family: Inter, sans-serif; font-size: 13px; font-weight: 400; color: #4A4A4A">{{g.unit}}</span></span>
+<div style="display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 3px; width: 240px; height: 240px">
+<sc-for list="{{g.cells}}" as="c" hint-placeholder-count="100">
+<sc-if value="{{c.isBulb}}" hint-placeholder-val="{{ false }}">
+<svg viewBox="0 0 24 24" aria-hidden="true" style="width: 100%; height: 100%; display: block"><path d="M12 2.5a6.8 6.8 0 0 0-3.9 12.4c.6.4.9 1.1.9 1.8v.8h6v-.8c0-.7.3-1.4.9-1.8A6.8 6.8 0 0 0 12 2.5z" fill="{{c.fill}}" stroke="{{c.ring}}" stroke-width="1.6" stroke-linejoin="round"></path><path d="M9.5 19.6h5M10.5 21.8h3" fill="none" stroke="{{c.ring}}" stroke-width="1.8" stroke-linecap="round"></path></svg>
+</sc-if>
+<sc-if value="{{c.notBulb}}" hint-placeholder-val="{{ true }}">
+<span style="{{c.style}}">{{c.sym}}</span>
+</sc-if>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 3px; width: 240px">
+<sc-for list="{{g.split}}" as="s" hint-placeholder-count="3">
+<div style="display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 13.5px; font-variant-numeric: tabular-nums">
+<span style="{{s.sw}}"></span>
+<span style="{{s.nameStyle}}">{{s.name}}</span>
+<span style="{{s.nameStyle}}">{{s.n}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+<p style="margin: 0; font-size: 15px; line-height: 1.5; border-top: 1px solid #EFEFEA; padding-top: 14px; max-width: 900px">The reasoning model handled <strong>10</strong> of every 100 requests but cost <strong>65</strong> of every 100 dollars. The small/fast model handled <strong>42</strong> requests for about <strong>1</strong> dollar. A reasoning request cost about <strong>$0.25</strong> more and used <strong>4.8 Wh</strong> more (range 3.5–6.2) than a frontier request.</p>
+<div style="background: #F6F6F3; border-radius: 10px; padding: 12px 16px; display: flex; flex-direction: column; gap: 2px; max-width: 900px">
+<span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #4A4A4A">The habit that outlasts the model</span>
+<span style="font-size: 14.5px; line-height: 1.5">Use a reasoning model for complex, multi-step problems. For everything else, OpenAI advises: “Speed and cost → GPT models are faster and tend to cost less.”</span>
+</div>
+<p style="margin: 0; font-size: 12px; color: #4A4A4A; line-height: 1.6">103,211 successful OpenAI requests, Oct 1–30, 2026 (synthetic). Coins rounded so each grid adds to 100. The o1-preview price is unverified. Energy estimated (central). Guidance: OpenAI, <a href="https://developers.openai.com/api/docs/guides/reasoning-best-practices">Reasoning best practices</a>, accessed Nov 14, 2026. All three models are retired or retiring; the habit applies to whichever models are current.</p>
+</section>
+
+<!-- CHART 4: OPPORTUNITY -->
+<section style="background: #FFFFFF; border: 1px solid #E2E2DD; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #4A4A4A">4 · The opportunity</span>
+<h2 style="margin: 0; font-size: 22px; font-weight: 600">Matching CMU's own best group would cut Sandbox's bill by about half and Dev's by about a third</h2>
+<p style="margin: 0; font-size: 14px; color: #4A4A4A">How to read: each stream flows from the 30-day bill today (Before, left) to the bill if that group matched local good (After, right). The colored layers are the money each habit change saves (darkest = biggest lever); they shrink to nothing, so the After stream is thinner. The pale layer is what is still spent. Each panel is scaled to its own Before bill.</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px">
+<sc-for list="{{streamKey}}" as="sk" hint-placeholder-count="4">
+<span style="display: flex; align-items: center; gap: 6px"><span style="{{sk.sw}}"></span>{{sk.name}}</span>
+</sc-for>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(560px, 1fr)); gap: 24px; overflow-x: auto">
+<sc-for list="{{streams}}" as="st" hint-placeholder-count="2">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 16px; font-weight: 600">{{st.name}}</span>
+<div style="position: relative; width: 560px; height: 300px">
+<svg viewBox="0 0 560 300" width="560" height="300" role="img" aria-label="{{st.alt}}" style="position: absolute; left: 0; top: 0; display: block">
+<path d="{{st.l0.d}}" fill="{{st.l0.fill}}" stroke="#FFFFFF" stroke-width="1.5"></path>
+<path d="{{st.l1.d}}" fill="{{st.l1.fill}}" stroke="#FFFFFF" stroke-width="1.5"></path>
+<path d="{{st.l2.d}}" fill="{{st.l2.fill}}" stroke="#FFFFFF" stroke-width="1.5"></path>
+<path d="{{st.l3.d}}" fill="{{st.l3.fill}}" stroke="#FFFFFF" stroke-width="1.5"></path>
+<path d="{{st.ghost}}" fill="none" stroke="#1A1A1A" stroke-width="1.5" stroke-dasharray="6 4"></path>
+<path d="{{st.bracket}}" fill="none" stroke="{{st.color}}" stroke-width="2.5" stroke-linejoin="round"></path>
+<line x1="125" y1="22" x2="125" y2="284" stroke="#CFCFC8" stroke-dasharray="3 3"></line>
+<line x1="435" y1="22" x2="435" y2="284" stroke="#CFCFC8" stroke-dasharray="3 3"></line>
+</svg>
+<span style="position: absolute; left: 95px; top: 0; width: 60px; text-align: center; font-size: 12px; font-weight: 600; color: #4A4A4A; letter-spacing: 0.04em; text-transform: uppercase">Before</span>
+<span style="position: absolute; left: 405px; top: 0; width: 60px; text-align: center; font-size: 12px; font-weight: 600; color: #4A4A4A; letter-spacing: 0.04em; text-transform: uppercase">After</span>
+<sc-for list="{{st.labels}}" as="lb" hint-placeholder-count="7">
+<span style="{{lb.style}}">{{lb.text}}</span>
+</sc-for>
+</div>
+<span style="font-size: 13px; font-variant-numeric: tabular-nums">{{st.summary}}</span>
+</div>
+</sc-for>
+</div>
+<p style="margin: 0; font-size: 12px; color: #4A4A4A">The three fixes overlap (for example, shorter prompts leave less text to cache), so each one alone saves more than its slice here. Each layer is that fix's share of the combined saving, split in proportion to what it saves alone. Local good = CMU's best group on the same provider.</p>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px">
+<div style="background: #F6F6F3; border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 12px; color: #4A4A4A">Campus total, local good</span>
+<span style="font-size: 18px; font-weight: 600">−$865 (−15%) · −27 kWh (−7%)</span>
+</div>
+<div style="background: #F6F6F3; border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 12px; color: #4A4A4A">Outside practice, per unit: +10 points of cache share everywhere</span>
+<span style="font-size: 18px; font-weight: 600">≈ −$187 / month · −8 to −9 kWh</span>
+</div>
+<div style="background: #F6F6F3; border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 12px; color: #4A4A4A">Outside practice, per unit: each reasoning request moved to a frontier model</span>
+<span style="font-size: 18px; font-weight: 600">≈ −$0.25 · −4.8 Wh</span>
+</div>
+</div>
+</section>
+
+<!-- RECOMMENDATIONS -->
+<section style="display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #4A4A4A">5 · Recommendations by persona (draft, B8)</span>
+<h2 style="margin: 0; font-size: 22px; font-weight: 600">Habits outlast models: each group gets one or two changes that still work after the next model swap</h2>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px">
+<sc-for list="{{recs}}" as="rc" hint-placeholder-count="3">
+<article style="background: #FFFFFF; border: 1px solid #E2E2DD; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; gap: 8px">
+<span style="{{rc.dot}}"></span>
+<h3 style="margin: 0; font-size: 16px; font-weight: 600">{{rc.who}}</h3>
+</div>
+<sc-for list="{{rc.items}}" as="it" hint-placeholder-count="2">
+<div style="display: flex; flex-direction: column; gap: 4px; padding-top: 10px; border-top: 1px solid #EFEFEA">
+<span style="font-size: 14px; line-height: 1.4">{{it.text}}</span>
+<div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center">
+<span style="font-size: 12px; color: #3F3F3F">{{it.impact}}</span>
+<span style="font-size: 11px; font-weight: 600; background: #E7F0E4; color: #2F5626; padding: 2px 8px; border-radius: 999px">{{it.shelf}}</span>
+</div>
+</div>
+</sc-for>
+</article>
+</sc-for>
+</div>
+</section>
+
+<!-- FOOTER -->
+<footer style="font-size: 12px; line-height: 1.6; color: #4A4A4A; border-top: 1px solid #E2E2DD; padding-top: 16px">
+Data: CMU IronViz 2026 synthetic AI gateway telemetry (OpenAI + Gemini), Oct 1–30, 2026, 202,650 requests. Cost: provider list prices (some unverified; swappable for CMU rates). Energy: Jegham et al. 2025 and Google 2025 per-request benchmarks; carbon: CodeCarbon grid factors (94 / 350 / 588 g/kWh). All energy and carbon figures are estimates shown as ranges. Models named as in the data; all are retired or retiring as of Nov 2026.
+</footer>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":3660}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sel: 'all' };
+  }
+  renderVals() {
+    var DEV = '#B54708', SBX = '#1D5FBF';
+    var sel = this.state.sel;
+    var self = this;
+    var personas = [
+      { id: 'dev', name: 'Engineering / Developers', short: 'Eng / Dev', color: DEV },
+      { id: 'sbx', name: 'Sandbox Testers', short: 'Sandbox', color: SBX },
+      { id: 'prod', name: 'Core Production Services', short: 'Core Prod', color: '#6B7280' },
+      { id: 'mkt', name: 'Marketing / Communications', short: 'Marketing', color: '#878C94' },
+      { id: 'ent', name: 'Enterprise Production', short: 'Enterprise', color: '#6B7280' },
+      { id: 'rd', name: 'Researchers (R&D)', short: 'R&D', color: '#878C94' }
+    ];
+    var data = {
+      cost:   { dev: 0.0554, sbx: 0.0212, prod: 0.0364, mkt: 0.0383, ent: 0.0106, rd: 0.0106 },
+      wh:     { dev: 2.29, sbx: 2.54, prod: 1.90, mkt: 1.94, ent: 1.69, rd: 1.69 },
+      cache:  { dev: 2.7, sbx: 2.4, prod: 22.6, mkt: 22.4, ent: 18.8, rd: 19.4 },
+      e400:   { dev: 6.1, sbx: 6.0, prod: 1.2, mkt: 1.1, ent: 1.2, rd: 1.1 },
+      prompt: { dev: 8038, sbx: 13986, prod: 4252, mkt: 4316, ent: 3693, rd: 3692 }
+    };
+    var defs = [
+      { key: 'cost', title: 'Cost per request', sub: 'US$, list price · lower is better', max: 0.06, fmt: function (v) { return '$' + v.toFixed(3); } },
+      { key: 'wh', title: 'Energy per request', sub: 'Wh, central estimate · lower is better', max: 2.6, fmt: function (v) { return v.toFixed(2) + ' Wh'; } },
+      { key: 'cache', title: 'Prompt text reused from cache', sub: '% of input · higher is better', max: 25, fmt: function (v) { return v.toFixed(1) + '%'; } },
+      { key: 'e400', title: 'Malformed requests (400 errors)', sub: '% of requests · lower is better', max: 7, fmt: function (v) { return v.toFixed(1) + '%'; } },
+      { key: 'prompt', title: 'Typical prompt size', sub: 'median input tokens · lower is better', max: 14000, fmt: function (v) { return v.toLocaleString('en-US'); } }
+    ];
+    var metrics = defs.map(function (d) {
+      return {
+        title: d.title, sub: d.sub,
+        rows: personas.map(function (p) {
+          var v = data[d.key][p.id];
+          var on = sel === 'all' || sel === p.id;
+          return {
+            short: p.short,
+            valueLabel: d.fmt(v),
+            wrapStyle: 'display: grid; grid-template-columns: 76px minmax(0, 1fr) 64px; align-items: center; gap: 8px; opacity: ' + (on ? '1' : '0.28'),
+            barStyle: 'height: 100%; border-radius: 3px; width: ' + Math.min(100, v / d.max * 100).toFixed(1) + '%; background: ' + p.color
+          };
+        })
+      };
+    });
+    var opts = [{ id: 'all', label: 'All groups' }].concat(personas.map(function (p) { return { id: p.id, label: p.name }; }));
+    var filters = opts.map(function (o) {
+      var on = sel === o.id;
+      return {
+        label: o.label,
+        pressed: on ? 'true' : 'false',
+        pick: function () { self.setState({ sel: o.id }); },
+        style: 'min-height: 44px; padding: 0 16px; border-radius: 999px; font: inherit; font-size: 14px; cursor: pointer; border: 1px solid ' + (on ? '#1A1A1A' : '#CFCFC8') + '; background: ' + (on ? '#1A1A1A' : '#FFFFFF') + '; color: ' + (on ? '#FFFFFF' : '#1A1A1A')
+      };
+    });
+    // Chart 1: all 6 groups, each with its own color AND shape (identity never by color alone).
+    // Each group sits in its own lane so the four groups clustered at 1× stay visible.
+    var P1 = [
+      { id: 'dev', name: 'Engineering / Developers', color: DEV, shape: 'circle', lane: 0, size: 16 },
+      { id: 'sbx', name: 'Sandbox Testers', color: SBX, shape: 'square', lane: 1, size: 16 },
+      { id: 'prod', name: 'Core Production', color: '#0E7C66', shape: 'diamond', lane: 2, size: 12 },
+      { id: 'mkt', name: 'Marketing / Comms', color: '#B8336A', shape: 'circle', lane: 3, size: 12 },
+      { id: 'ent', name: 'Enterprise Production', color: '#475569', shape: 'square', lane: 4, size: 12 },
+      { id: 'rd', name: 'Researchers (R&D)', color: '#A67C00', shape: 'diamond', lane: 5, size: 12 }
+    ];
+    var AX = 9;
+    function shapeCss(p) {
+      var r = p.shape === 'circle' ? '50%' : (p.shape === 'square' ? '3px' : '2px');
+      var rot = p.shape === 'diamond' ? ' transform: rotate(45deg);' : '';
+      return 'background: ' + p.color + '; border-radius: ' + r + ';' + rot;
+    }
+    function dot(p, mult) {
+      var top = 2 + p.lane * 10 - (p.size - 12) / 2;
+      return 'position: absolute; top: ' + top + 'px; width: ' + p.size + 'px; height: ' + p.size + 'px; margin-left: -' + (p.size / 2) + 'px; left: ' + (Math.min(mult, AX) / AX * 100).toFixed(2) + '%; border: 2px solid #FFFFFF; box-sizing: border-box; box-shadow: 0 0 0 1px ' + p.color + '; ' + shapeCss(p);
+    }
+    var p1Legend = P1.map(function (p) { return { name: p.name, sw: 'display: inline-block; width: 12px; height: 12px; ' + shapeCss(p) }; });
+    var problemRows = [
+      { label: 'Cost per request', note: 'Dev 1.5× · Sandbox 2.0×',
+        m: { dev: 1.52, sbx: 2.00, prod: 1.00, mkt: 1.05, ent: 1.00, rd: 1.00 },
+        raw: { dev: '$0.055', sbx: '$0.021', prod: '$0.036', mkt: '$0.038', ent: '$0.011', rd: '$0.011' } },
+      { label: 'Energy per request', note: 'Dev 1.2× · Sandbox 1.5×',
+        m: { dev: 1.21, sbx: 1.50, prod: 1.00, mkt: 1.02, ent: 1.00, rd: 1.00 },
+        raw: { dev: '2.29 Wh', sbx: '2.54 Wh', prod: '1.90 Wh', mkt: '1.94 Wh', ent: '1.69 Wh', rd: '1.69 Wh' } },
+      { label: 'Prompt size', note: 'Dev 1.9× · Sandbox 3.8×',
+        m: { dev: 1.89, sbx: 3.79, prod: 1.00, mkt: 1.01, ent: 1.00, rd: 1.00 },
+        raw: { dev: '8,038 tokens', sbx: '13,986 tokens', prod: '4,252 tokens', mkt: '4,316 tokens', ent: '3,693 tokens', rd: '3,692 tokens' } },
+      { label: 'Malformed requests (400)', note: 'Dev 5.5× · Sandbox 5.4×',
+        m: { dev: 5.51, sbx: 5.43, prod: 1.12, mkt: 1.00, ent: 1.04, rd: 1.00 },
+        raw: { dev: '6.1%', sbx: '6.0%', prod: '1.2%', mkt: '1.1%', ent: '1.2%', rd: '1.1%' } },
+      { label: 'Reuse from cache (× less)', note: 'Dev 8.4× · Sandbox 7.9× less',
+        m: { dev: 8.38, sbx: 7.93, prod: 1.00, mkt: 1.01, ent: 1.03, rd: 1.00 },
+        raw: { dev: '2.7% of input', sbx: '2.4% of input', prod: '22.6% of input', mkt: '22.4% of input', ent: '18.8% of input', rd: '19.4% of input' } }
+    ].map(function (r) {
+      return {
+        label: r.label, note: r.note,
+        bars: P1.map(function (p) {
+          var m = r.m[p.id], hi = p.id === 'dev' || p.id === 'sbx';
+          return {
+            tip: p.name + ': ' + r.raw[p.id] + ' (' + m.toFixed(2) + '×)',
+            style: 'width: 100%; border-radius: 3px 3px 0 0; background: ' + p.color + '; height: ' + (Math.min(m, AX) / AX * 100).toFixed(2) + '%',
+            lab: hi ? m.toFixed(1) + '×' : '',
+            labStyle: 'font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; color: ' + p.color,
+            mark: 'display: inline-block; width: 10px; height: 10px; ' + shapeCss(p)
+          };
+        })
+      };
+    });
+    function bar(pct, color) {
+      return 'height: 16px; border-radius: 3px; background: ' + color + '; width: ' + (pct / 50 * 100).toFixed(1) + '%';
+    }
+    // Local-good habit values (best group on the same provider; persona_metrics.csv). Each lever gets a
+    // "today vs local good" pair next to each group's saving bar.
+    var LG_GREY = '#6B7280';
+    function pair(color, val, lg, fmt) {
+      var max = Math.max(val, lg) * 1.08;
+      function row(who, v, c, bold) {
+        return { who: who, val: fmt(v),
+                 bar: 'height: 10px; border-radius: 2px; background: ' + c + '; width: ' + (v / max * 100).toFixed(1) + '%',
+                 valStyle: 'text-align: right; font-weight: ' + (bold ? '600' : '400') };
+      }
+      return [row('Today', val, color, true), row('Local good', lg, LG_GREY, false)];
+    }
+    function tok(v) { return (v / 1000).toFixed(1) + 'k tok'; }
+    function pc(v) { return v.toFixed(1) + '%'; }
+    function usd(v) { return '$' + v.toFixed(3); }
+    var levers = [
+      { label: 'Trim prompts to best-group size', habit: 'Median prompt length', dc: 21.3, de: 11.1, dd: 393, sc: 26.2, se: 18.4, sd: 160,
+        dv: 8038, dl: 4252, sv: 13986, sl: 3692, fmt: tok },
+      { label: 'Mix models like the best group', habit: 'Share of requests on the frontier model', dc: 8.6, de: 1.8, dd: 159, sc: 22.8, se: 5.1, sd: 140,
+        dv: 58.9, dl: 42.9, sv: 64.8, sl: 47.4, fmt: pc },
+      { label: 'Cache like the best group (22.6%)', habit: 'Prompt text reused from cache', dc: 6.0, de: 4.3, dd: 110, sc: 11.2, se: 7.1, sd: 68,
+        dv: 2.7, dl: 22.6, sv: 2.4, sl: 22.6, fmt: pc },
+      { label: 'All three together', habit: 'Cost per request', dc: 31.0, de: 13.3, dd: 572, sc: 47.7, se: 23.4, sd: 292, total: true,
+        dv: 0.0554, dl: 0.0364, sv: 0.0212, sl: 0.0106, fmt: usd }
+    ].map(function (l) {
+      return {
+        label: l.label, habit: l.habit,
+        labelStyle: 'font-size: 14px; font-weight: ' + (l.total ? '700' : '500'),
+        devBar: bar(l.dc, DEV), sbxBar: bar(l.sc, SBX),
+        devLabel: '−' + l.dc.toFixed(0) + '% ($' + l.dd + ') · −' + l.de.toFixed(0) + '% kWh',
+        sbxLabel: '−' + l.sc.toFixed(0) + '% ($' + l.sd + ') · −' + l.se.toFixed(0) + '% kWh',
+        devPair: pair(DEV, l.dv, l.dl, l.fmt),
+        sbxPair: pair(SBX, l.sv, l.sl, l.fmt)
+      };
+    });
+    function dotc(c) { return 'width: 12px; height: 12px; border-radius: 50%; background: ' + c; }
+    var recs = [
+      { who: 'Engineering / Dev and Sandbox (student proxies)', dot: dotc(DEV), items: [
+        { text: 'Trim prompts to only the context the task needs.', impact: 'Dev −21% cost, Sandbox −26%', shelf: 'Habit' },
+        { text: 'Validate requests before sending to cut malformed calls from about 6% to about 1%.', impact: '≈3,355 failed requests avoided / month', shelf: 'Habit' },
+        { text: 'Put stable instructions first so prompt caching applies.', impact: 'Part of local-good totals', shelf: 'Habit' }
+      ] },
+      { who: 'Production, Marketing and Research groups', dot: dotc('#6B7280'), items: [
+        { text: 'Cap answer length where long answers add no value.', impact: 'Campus −2% cost, −3% energy', shelf: 'Habit' },
+        { text: 'Use the reasoning model (o1-preview today) only for multi-step problems.', impact: '≈ −$0.25 and −4.8 Wh per request moved', shelf: 'Habit · model name expires' }
+      ] },
+      { who: 'Campus IT and leadership', dot: dotc('#1A1A1A'), items: [
+        { text: 'Keep a living table that maps each purpose (reasoning, frontier, small/fast) to the current model.', impact: 'Keeps advice valid as models retire', shelf: 'Habit' },
+        { text: 'Publish a monthly scorecard per group: cache share, 400 rate, prompt size.', impact: 'Tracks every lever above', shelf: 'Habit' }
+      ] }
+    ];
+    // ---- Chart 3: E8 (scripts/09_build_e8.py → viz/e8_data.json). Model types use one purple scale
+    // (dark = heaviest model) so they never look like the Dev (orange) / Sandbox (blue) persona colors.
+    var MT = [
+      { id: 'r', label: 'Reasoning model', model: 'o1-preview', purpose: 'for multi-step problems', color: '#1F0A4D', ink: '#FFFFFF', ring: '#1F0A4D', per: '$0.282 and 6.6 Wh per request',
+        explain: 'Works through hidden "thinking" steps before it answers. Slowest and priciest; built for math, planning and multi-step logic.', req: 10, cost: 65, energy: 32 },
+      { id: 'f', label: 'Frontier model', model: 'gpt-4o', purpose: 'for general high-quality work', color: '#8B5CF6', ink: '#FFFFFF', ring: '#6D3FD9', per: '$0.031 and 1.8 Wh per request',
+        explain: 'The provider’s main all-round model. Answers directly; good for writing, analysis and most everyday work.', req: 48, cost: 34, energy: 42 },
+      { id: 's', label: 'Small/fast model', model: 'gpt-4o-mini', purpose: 'for routine tasks', color: '#EDE7FD', ink: '#3B2380', ring: '#9C86E0', per: '$0.001 and 1.2 Wh per request',
+        explain: 'A lighter, cheaper version. Fast and good enough for routine jobs like summaries, sorting and pulling out facts.', req: 42, cost: 1, energy: 26 }
+    ];
+    function sw(c, size, ring) { return 'width: ' + size + 'px; height: ' + size + 'px; border-radius: 50%; background: ' + c + '; box-shadow: inset 0 0 0 1.5px ' + (ring || c) + '; display: inline-block'; }
+    var e8Keys = MT.map(function (m) { return { label: m.label, model: m.model, purpose: m.purpose, explain: m.explain, per: m.per, sw: sw(m.color, 18, m.ring) }; });
+    var e8Grids = [
+      { key: 'req', title: 'Every 100 requests', unit: '' },
+      { key: 'cost', title: 'Every 100 dollars', unit: '' },
+      { key: 'energy', title: 'Every 100 watt-hours', unit: '(estimated)' }
+    ].map(function (g) {
+      var cells = [];
+      MT.forEach(function (m) {
+        // requests = plain blocks, dollars = $ coins, energy = lightbulbs (inline SVG)
+        for (var i = 0; i < m[g.key]; i++) {
+          if (g.key === 'energy') {
+            cells.push({ isBulb: true, notBulb: false, fill: m.color, ring: m.ring });
+          } else if (g.key === 'cost') {
+            cells.push({ isBulb: false, notBulb: true, sym: '$', style: 'display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 12px; font-weight: 700; line-height: 1; color: ' + m.ink + '; background: ' + m.color + '; box-shadow: inset 0 0 0 1.5px ' + m.ring });
+          } else {
+            cells.push({ isBulb: false, notBulb: true, sym: '', style: 'display: block; border-radius: 3px; background: ' + m.color + '; box-shadow: inset 0 0 0 1.5px ' + m.ring });
+          }
+        }
+      });
+      return {
+        title: g.title, unit: g.unit, cells: cells,
+        split: MT.map(function (m) {
+          return { name: m.label.replace(' model', ''), n: m[g.key], sw: sw(m.color, 12, m.ring),
+                   nameStyle: 'font-weight: ' + (m.id === 'r' ? '700' : '400') };
+        })
+      };
+    });
+    // ---- Chart 4 streamgraph (D32): Before = actual 30-day cost; After = all three local-good fixes (scripts/07_scenarios.py).
+    // Overlapping fixes: the combined saving is split in proportion to each fix's solo saving, so the layers sum exactly.
+    var HABITS = [
+      { key: 'prompt', name: 'Saved by shorter prompts', fill: '#4B5563' },
+      { key: 'mix', name: 'Saved by using the small model more', fill: '#8A939C' },
+      { key: 'cache', name: 'Saved by reusing prompt text', fill: '#C3C8CE' }
+    ];
+    function money(v) { return '$' + Math.round(v).toLocaleString('en-US'); }
+    // Savings layers carry the group's hue (dark → light); "still spent" recedes to a pale tint (user comment 2026-11-14).
+    function stream(name, color, tint, shades, before, after, solo, kwhPct) {
+      var total = before - after, soloSum = solo.prompt + solo.mix + solo.cache, k = total / soloSum;
+      var parts = HABITS.map(function (h, i) { return { name: h.name, fill: shades[i], v: solo[h.key] * k }; });
+      var H = 240, C = 155, sc = H / before;
+      var botB = C + before * sc / 2, botA = C + after * sc / 2;
+      var layers = [{ name: 'Still spent', fill: tint, b: after, a: after }].concat(parts.map(function (p) { return { name: p.name, fill: p.fill, b: p.v, a: 0 }; }));
+      var yb = botB, ya = botA, out = [], labels = [];
+      layers.forEach(function (L) {
+        var tb = yb - L.b * sc, ta = ya - L.a * sc;
+        var d = 'M95 ' + tb.toFixed(1) + ' L125 ' + tb.toFixed(1) + ' C280 ' + tb.toFixed(1) + ' 280 ' + ta.toFixed(1) + ' 435 ' + ta.toFixed(1) +
+                ' L465 ' + ta.toFixed(1) + ' L465 ' + ya.toFixed(1) + ' L435 ' + ya.toFixed(1) + ' C280 ' + ya.toFixed(1) + ' 280 ' + yb.toFixed(1) + ' 125 ' + yb.toFixed(1) + ' L95 ' + yb.toFixed(1) + ' Z';
+        out.push({ d: d, fill: L.fill });
+        var mid = (tb + yb) / 2, still = L.name === 'Still spent';
+        labels.push({ text: (still ? 'Still spent ' : '−') + money(L.b),
+                      style: 'position: absolute; left: 0; top: ' + (mid - 8).toFixed(0) + 'px; width: 90px; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; ' + (still ? 'font-size: 11px; color: #6B6B6B; font-weight: 400' : 'font-size: 12.5px; color: ' + L.fill.replace(/^#(E0|6E)/, '#$1') + '; font-weight: 700; color: #1A1A1A') });
+        yb = tb; ya = ta;
+      });
+      var pct = Math.round(total / before * 100);
+      // Ghost outline: the Before bill's edges carried across to After, plus brackets marking the gap (user comment: "make the difference more obvious").
+      var tB = C - before * sc / 2, tA = C - after * sc / 2, bA = C + after * sc / 2;
+      var ghost = 'M125 ' + tB.toFixed(1) + ' L465 ' + tB.toFixed(1) + ' M125 ' + botB.toFixed(1) + ' L465 ' + botB.toFixed(1);
+      var bracket = 'M459 ' + tB.toFixed(1) + ' L468 ' + tB.toFixed(1) + ' L468 ' + tA.toFixed(1) + ' L459 ' + tA.toFixed(1) +
+                    ' M459 ' + bA.toFixed(1) + ' L468 ' + bA.toFixed(1) + ' L468 ' + botB.toFixed(1) + ' L459 ' + botB.toFixed(1);
+      labels.push({ text: 'Before ' + money(before), style: 'position: absolute; left: 95px; top: ' + (C - before * sc / 2 - 22).toFixed(0) + 'px; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap' });
+      labels.push({ text: 'After ' + money(after), style: 'position: absolute; left: 472px; top: ' + (C - 40).toFixed(0) + 'px; font-size: 12px; font-weight: 500; color: #4A4A4A; font-variant-numeric: tabular-nums; white-space: nowrap' });
+      labels.push({ text: 'Saves ' + money(total), style: 'position: absolute; left: 472px; top: ' + (C - 20).toFixed(0) + 'px; font-family: \'Space Grotesk\', Inter, sans-serif; font-size: 26px; line-height: 1; font-weight: 700; color: ' + color + '; font-variant-numeric: tabular-nums; white-space: nowrap' });
+      labels.push({ text: '−' + pct + '% cost · −' + kwhPct + '% energy', style: 'position: absolute; left: 472px; top: ' + (C + 12).toFixed(0) + 'px; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; color: ' + color + '; white-space: nowrap' });
+      return {
+        name: name, l0: out[0], l1: out[1], l2: out[2], l3: out[3], labels: labels, ghost: ghost, bracket: bracket, color: color,
+        summary: 'Before ' + money(before) + ' → After ' + money(after) + ' over 30 days (−' + pct + '% cost, −' + kwhPct + '% energy). ' +
+                 parts.map(function (p) { return p.name.replace('Saved by ', '') + ' ' + money(p.v); }).join(' · '),
+        alt: name + ' streamgraph: 30-day cost falls from ' + money(before) + ' to ' + money(after) + '. ' + parts.map(function (p) { return p.name + ' ' + money(p.v); }).join(', ') + '.'
+      };
+    }
+    var streams = [
+      stream('Engineering / Developers', DEV, '#F3ECE6', ['#6B2803', '#B54708', '#E9A06B'], 1843.47, 1271.34, { prompt: 393.0, mix: 159.4, cache: 110.0 }, 13),
+      stream('Sandbox Testers', SBX, '#E8EDF4', ['#0C2F66', '#1D5FBF', '#82A9E6'], 613.26, 320.89, { prompt: 160.4, mix: 139.7, cache: 68.4 }, 23)
+    ];
+    var KEYSH = [['#6B2803', '#0C2F66'], ['#B54708', '#1D5FBF'], ['#E9A06B', '#82A9E6']];
+    var streamKey = [{ name: 'Still spent after the fixes', sw: 'display: inline-block; width: 14px; height: 14px; border-radius: 3px; box-shadow: inset 0 0 0 1px #CFCFC8; background: linear-gradient(90deg, #F3ECE6 50%, #E8EDF4 50%)' }]
+      .concat(HABITS.map(function (h, i) { return { name: h.name, sw: 'display: inline-block; width: 14px; height: 14px; border-radius: 3px; background: linear-gradient(90deg, ' + KEYSH[i][0] + ' 50%, ' + KEYSH[i][1] + ' 50%)' }; }));
+    return { filters: filters, metrics: metrics, problemRows: problemRows, p1Legend: p1Legend, levers: levers, recs: recs, e8Keys: e8Keys, e8Grids: e8Grids, streams: streams, streamKey: streamKey };
+  }
+}
+</script>
+</body>
+</html>
