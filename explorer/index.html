@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Viz Arrangement Explorer</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10); --muted-fill: #c3c2b7;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #6250d6; --s8: #e34948;
+  --accent: #2a78d6; --wash: rgba(42,120,214,0.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10); --muted-fill: #4a4a46;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #0ca30c; --s7: #9085e9; --s8: #e66767;
+    --accent: #3987e5; --wash: rgba(57,135,229,0.14);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10); --muted-fill: #4a4a46;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #0ca30c; --s7: #9085e9; --s8: #e66767;
+  --accent: #3987e5; --wash: rgba(57,135,229,0.14);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header { padding: 16px 24px 8px; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+header h1 { font-size: 18px; margin: 0; font-weight: 600; }
+header .sub { color: var(--ink-2); font-size: 13px; }
+header .spacer { flex: 1; }
+button, select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+button:hover, select:hover { background: var(--wash); }
+button[aria-pressed="true"] { border-color: var(--accent); background: var(--wash); }
+.layout { display: grid; grid-template-columns: 280px 1fr; gap: 16px; padding: 8px 24px 24px; }
+@media (max-width: 860px) { .layout { grid-template-columns: 1fr; padding: 8px 16px 16px; } header { padding: 16px 16px 8px; } }
+aside { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; align-self: start; }
+aside h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 16px 0 6px; font-weight: 600; }
+aside h2:first-child { margin-top: 0; }
+aside select { width: 100%; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; font-size: 12px; border-radius: 999px; }
+.chip i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.chip[aria-pressed="false"] { opacity: .45; }
+.toggles { display: grid; gap: 6px; }
+.toggles label { display: flex; gap: 8px; align-items: center; color: var(--ink-2); cursor: pointer; }
+.toggles label.off { opacity: .4; cursor: default; }
+.hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+main { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; min-width: 0; }
+.title { font-size: 20px; font-weight: 600; margin: 0 0 4px; outline: none; border-radius: 6px; }
+.title:empty::before { content: attr(data-placeholder); color: var(--muted); font-weight: 400; }
+.title:focus { box-shadow: 0 0 0 2px var(--wash); }
+.subtitle { color: var(--ink-2); margin: 0 0 12px; font-size: 13px; }
+.notice { font-size: 12px; color: var(--ink-2); background: var(--wash); border-radius: 8px; padding: 6px 10px; margin-bottom: 10px; display: none; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--ink-2); margin-bottom: 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+#chart { width: 100%; }
+#chart svg { display: block; overflow: visible; }
+svg text { fill: var(--ink-2); font-size: 12px; font-family: inherit; }
+svg .val { fill: var(--ink); font-variant-numeric: tabular-nums; }
+svg .tick { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+svg .grid { stroke: var(--grid); stroke-width: 1; }
+svg .base { stroke: var(--axis); stroke-width: 1; }
+svg .panel-t { fill: var(--ink); font-weight: 600; }
+svg [data-tip] { cursor: default; }
+footer.src { color: var(--muted); font-size: 11px; margin-top: 14px; border-top: 1px solid var(--grid); padding-top: 8px; }
+#tip { position: fixed; pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.12); display: none; max-width: 280px; z-index: 10; }
+#tip b { display: block; margin-bottom: 2px; }
+table { border-collapse: collapse; width: 100%; font-size: 12px; margin-top: 16px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--grid); }
+th { color: var(--muted); font-weight: 600; }
+td.n { text-align: right; }
+.tablewrap { overflow-x: auto; }
+.row-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Viz Arrangement Explorer</h1>
+  <span class="sub">CMU IronViz · AI telemetry, Oct 1–30 2026 · synthetic data, carbon estimated</span>
+  <span class="spacer"></span>
+  <button id="theme" title="Switch light/dark">Theme</button>
+</header>
+
+<div class="layout">
+<aside>
+  <h2>Chart type</h2>
+  <select id="chartType"></select>
+  <div class="hint" id="chartHint"></div>
+
+  <h2>Measure</h2>
+  <select id="measure"></select>
+
+  <h2>Group by (rows)</h2>
+  <select id="groupBy"></select>
+
+  <h2>Split by (color)</h2>
+  <select id="splitBy"></select>
+
+  <h2>Sort</h2>
+  <select id="sort">
+    <option value="value">Largest first</option>
+    <option value="fixed">Fixed order</option>
+    <option value="name">A–Z</option>
+  </select>
+
+  <h2>Personas included</h2>
+  <div class="chips" id="personaChips"></div>
+
+  <h2>Options</h2>
+  <div class="toggles">
+    <label><input type="checkbox" id="highlight"> Highlight Dev &amp; Sandbox (mute others)</label>
+    <label id="rangeL"><input type="checkbox" id="range" checked> Show low–high estimate range</label>
+    <label id="logL"><input type="checkbox" id="log"> Log scale</label>
+    <label><input type="checkbox" id="labels" checked> Value labels</label>
+    <label><input type="checkbox" id="table"> Show data table</label>
+  </div>
+</aside>
+
+<main>
+  <div class="notice" id="notice"></div>
+  <h2 class="title" id="title" contenteditable="true" spellcheck="true" data-placeholder="Type the one sentence this chart proves…"></h2>
+  <p class="subtitle" id="subtitle"></p>
+  <div class="legend" id="legend"></div>
+  <div id="chart"></div>
+  <div class="tablewrap" id="tableWrap"></div>
+  <div class="row-actions">
+    <button id="copy">Copy setup (for process-log)</button>
+    <button id="png">Download SVG</button>
+  </div>
+  <footer class="src" id="src"></footer>
+</main>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script src="data.js"></script>
+<script>
+(() => {
+const D = window.EXPLORER_DATA;
+const CUBE = D.cube;
+
+// ---------- dimensions (color follows the entity: fixed slot per value) ----------
+const uniq = k => [...new Set(CUBE.map(r => r[k]))];
+const DIMS = {
+  persona:     { label: 'Persona', key: 'persona_label', order: ['Engineering / Developers', 'Sandbox Testers', 'Core Production Services', 'Enterprise Production', 'Marketing / Communications', 'Researchers (R&D)'] },
+  purpose:     { label: 'Model purpose', key: 'purpose', order: ['Reasoning', 'Frontier', 'Small/fast'] },
+  model:       { label: 'Model (with purpose)', key: 'model', order: ['o1-preview', 'gpt-4o', 'gpt-4o-mini', 'gemini-1.5-pro', 'gemini-1.5-flash'] },
+  environment: { label: 'Environment', key: 'environment', order: ['dev', 'sandbox', 'prod', 'business', 'research'] },
+  provider:    { label: 'Provider', key: 'provider', order: ['openai', 'gemini'] },
+  merge:       { label: 'Merge group', key: 'merge_candidate', order: ['Dev & Sandbox', 'Production Services', 'Marketing / Communications (no Gemini twin)', 'Researchers (no OpenAI twin)'] },
+};
+for (const d of Object.values(DIMS)) for (const v of uniq(d.key)) if (!d.order.includes(v)) d.order.push(v);
+const PURPOSE_OF = Object.fromEntries(CUBE.map(r => [r.model, r.purpose]));
+const display = (dim, v) => dim === 'model' ? `${v} · ${PURPOSE_OF[v].toLowerCase()}`
+  : dim === 'provider' ? ({ openai: 'OpenAI', gemini: 'Gemini' }[v] || v) : v;
+const colorOf = (dim, v) => `var(--s${(DIMS[dim].order.indexOf(v) % 8) + 1})`;
+const OUTLIERS = ['Engineering / Developers', 'Sandbox Testers'];
+
+// ---------- measures ----------
+const n0 = v => Math.round(v).toLocaleString();
+const n1 = v => v.toLocaleString(undefined, { maximumFractionDigits: 1, minimumFractionDigits: v < 100 ? 1 : 0 });
+const n2 = v => v.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+const usd = v => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+const usd3 = v => '$' + v.toFixed(v < 0.01 ? 4 : 3);
+const pct = v => v.toFixed(1) + '%';
+const safe = (a, b) => b > 0 ? a / b : null;
+const M = {
+  calls:     { label: 'Requests', add: true, v: a => a.calls, fmt: n0 },
+  cost:      { label: 'Cost (USD, list prices)', add: true, v: a => a.cost, fmt: usd },
+  kwh:       { label: 'Energy (kWh, estimate)', add: true, v: a => a.wh_central / 1000, lo: a => a.wh_low / 1000, hi: a => a.wh_high / 1000, fmt: n1 },
+  co2:       { label: 'Carbon (kg CO₂e, estimate)', add: true, v: a => a.g_central / 1000, lo: a => a.g_low / 1000, hi: a => a.g_high / 1000, fmt: n1 },
+  tokens:    { label: 'Tokens processed (millions)', add: true, v: a => (a.input_tokens + a.output_tokens) / 1e6, fmt: n1 },
+  out_tok:   { label: 'Output tokens (millions)', add: true, v: a => a.output_tokens / 1e6, fmt: n1 },
+  failed:    { label: 'Failed requests (400 + 429)', add: true, v: a => a.e400 + a.e429, fmt: n0 },
+  saved:     { label: 'Money already saved by caching (USD)', add: true, v: a => a.cost_nocache - a.cost, fmt: usd },
+  cost_per:  { label: 'Cost per successful request (USD)', v: a => safe(a.cost, a.success), fmt: usd3 },
+  wh_per:    { label: 'Energy per successful request (Wh, estimate)', v: a => safe(a.wh_central, a.success), lo: a => safe(a.wh_low, a.success), hi: a => safe(a.wh_high, a.success), fmt: n2 },
+  g_per:     { label: 'Carbon per successful request (g CO₂e, estimate)', v: a => safe(a.g_central, a.success), lo: a => safe(a.g_low, a.success), hi: a => safe(a.g_high, a.success), fmt: n2 },
+  prompt:    { label: 'Average prompt size (tokens per successful request)', v: a => safe(a.input_tokens, a.success), fmt: n0 },
+  answer:    { label: 'Average answer size (output tokens per successful request)', v: a => safe(a.output_tokens, a.success), fmt: n0 },
+  cache:     { label: 'Share of prompt tokens served from cache (%)', v: a => safe(100 * a.cached_tokens, a.input_tokens), fmt: pct },
+  r400:      { label: 'Bad-request rate, HTTP 400 (% of requests)', v: a => safe(100 * a.e400, a.calls), fmt: pct },
+  r429:      { label: 'Rate-limit rate, HTTP 429 (% of requests)', v: a => safe(100 * a.e429, a.calls), fmt: pct },
+  hidden:    { label: 'Hidden reasoning share of output (%, OpenAI only)', v: a => safe(100 * a.reasoning_tokens, a.out_openai), fmt: pct },
+};
+const SUMS = ['calls', 'success', 'e400', 'e429', 'input_tokens', 'output_tokens', 'cached_tokens', 'reasoning_tokens', 'cost', 'cost_nocache', 'wh_low', 'wh_central', 'wh_high', 'g_low', 'g_central', 'g_high', 'out_openai'];
+
+// ---------- chart types ----------
+const CHARTS = {
+  bar:      { label: 'Sorted bar', hint: 'One value per row. The default for comparing personas.' },
+  dot:      { label: 'Dot plot (Cleveland)', hint: 'Lighter than bars; good when values sit far from zero. Log scale allowed.', log: true },
+  lollipop: { label: 'Lollipop', hint: 'A bar with less ink; reads as a ranking.' },
+  grouped:  { label: 'Grouped bar', hint: 'Side-by-side bars per row; compares split values within each row.', split: true },
+  stacked:  { label: 'Stacked bar', hint: 'Totals and their parts. Only for measures that add up.', split: true, add: true },
+  stack100: { label: '100% stacked bar', hint: 'Mix within each row (part-to-whole). Only for measures that add up.', split: true, add: true },
+  heatmap:  { label: 'Heatmap (highlight table)', hint: 'Rows × split values, shaded by value.', split: true },
+  multiples:{ label: 'Small multiples', hint: 'One mini chart per split value, same scale.', split: true },
+  dumbbell: { label: 'Dumbbell: share of requests vs share of measure', hint: 'Shows where a small share of requests drives a big share of cost, energy or carbon.', add: true },
+  box:      { label: 'Box plot (token distribution)', hint: 'Prompt or answer size spread: box = middle 50%, whiskers = 10th–90th percentile. Uses all personas.', log: true, dist: true },
+};
+
+// ---------- state & controls ----------
+const $ = id => document.getElementById(id);
+const S = { chart: 'bar', measure: 'cost_per', group: 'persona', split: 'none', sort: 'value', personas: new Set(DIMS.persona.order), highlight: false, range: true, log: false, labels: true, table: false, distTok: 'input_tokens' };
+// optional starting setup from the URL, e.g. index.html#chart=stacked&measure=cost&group=persona&split=purpose
+for (const [k, v] of new URLSearchParams(location.hash.slice(1))) {
+  if (k === 'chart' && CHARTS[v]) S.chart = v; else if (k === 'measure') { if (M[v]) S.measure = v; else S.distTok = v; }
+  else if (k === 'group' && DIMS[v]) S.group = v; else if (k === 'split' && (DIMS[v] || v === 'none')) S.split = v;
+  else if (['highlight', 'log', 'table'].includes(k)) S[k] = v === '1';
+}
+['highlight', 'log', 'table'].forEach(k => document.getElementById(k).checked = S[k]);
+const fill = (sel, opts) => sel.innerHTML = opts.map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+fill($('chartType'), Object.entries(CHARTS).map(([k, c]) => [k, c.label]));
+const dimOpts = Object.entries(DIMS).map(([k, d]) => [k, d.label]);
+fill($('groupBy'), dimOpts);
+fill($('splitBy'), [['none', 'None'], ...dimOpts]);
+function measureOptions() {
+  if (CHARTS[S.chart].dist) return fill($('measure'), [['input_tokens', 'Prompt size (input tokens per request)'], ['output_tokens', 'Answer size (output tokens per request)']]);
+  const add = CHARTS[S.chart].add;
+  fill($('measure'), Object.entries(M).filter(([, m]) => !add || m.add).map(([k, m]) => [k, m.label]));
+}
+$('personaChips').innerHTML = DIMS.persona.order.map(p => `<button class="chip" aria-pressed="true" data-p="${p}"><i style="background:${colorOf('persona', p)}"></i>${p}</button>`).join('');
+
+function syncControls() {
+  const c = CHARTS[S.chart];
+  measureOptions();
+  if (c.dist) { if (!['input_tokens', 'output_tokens'].includes(S.distTok)) S.distTok = 'input_tokens'; $('measure').value = S.distTok; }
+  else { if (c.add && !M[S.measure].add) S.measure = 'cost'; $('measure').value = S.measure; }
+  $('chartType').value = S.chart; $('groupBy').value = S.group; $('splitBy').value = S.split; $('sort').value = S.sort;
+  $('splitBy').disabled = !c.split && S.chart !== 'bar';
+  if ($('splitBy').disabled) $('splitBy').value = 'none';
+  $('chartHint').textContent = c.hint;
+  const hasRange = !c.dist && !!M[S.measure]?.lo && !['stacked', 'stack100', 'heatmap', 'dumbbell', 'grouped'].includes(S.chart);
+  $('rangeL').classList.toggle('off', !hasRange); $('range').disabled = !hasRange;
+  $('logL').classList.toggle('off', !c.log); $('log').disabled = !c.log;
+  document.querySelectorAll('#personaChips .chip').forEach(b => { b.disabled = !!c.dist; b.setAttribute('aria-pressed', S.personas.has(b.dataset.p)); });
+}
+$('chartType').onchange = e => { S.chart = e.target.value; const c = CHARTS[S.chart]; if (c.split && (S.split === 'none' || S.split === S.group)) S.split = S.group === 'purpose' ? 'persona' : 'purpose'; if (!c.split && S.chart !== 'bar') S.split = 'none'; render(); };
+$('measure').onchange = e => { if (CHARTS[S.chart].dist) S.distTok = e.target.value; else S.measure = e.target.value; render(); };
+$('groupBy').onchange = e => { S.group = e.target.value; if (S.split === S.group) S.split = 'none'; render(); };
+$('splitBy').onchange = e => { S.split = e.target.value; render(); };
+$('sort').onchange = e => { S.sort = e.target.value; render(); };
+['highlight', 'range', 'log', 'labels', 'table'].forEach(k => $(k).onchange = e => { S[k] = e.target.checked; render(); });
+$('personaChips').onclick = e => { const b = e.target.closest('.chip'); if (!b || b.disabled) return; const p = b.dataset.p; if (S.personas.has(p)) { if (S.personas.size > 1) S.personas.delete(p); } else S.personas.add(p); render(); };
+$('theme').onclick = () => { const r = document.documentElement; const dark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; r.dataset.theme = dark ? 'light' : 'dark'; render(); };
+
+// ---------- aggregation ----------
+function aggregate(rows, keyFn) {
+  const out = new Map();
+  for (const r of rows) {
+    const k = keyFn(r); let a = out.get(k);
+    if (!a) { a = Object.fromEntries(SUMS.map(s => [s, 0])); out.set(k, a); }
+    for (const s of SUMS) a[s] += s === 'out_openai' ? (r.provider === 'openai' ? r.output_tokens : 0) : r[s];
+  }
+  return out;
+}
+function rowsFiltered() { return CUBE.filter(r => S.personas.has(r.persona_label)); }
+function orderGroups(groups, valFn) {
+  const ord = DIMS[S.group].order;
+  const g = [...groups];
+  if (S.sort === 'value') g.sort((a, b) => (valFn(b) ?? -Infinity) - (valFn(a) ?? -Infinity));
+  else if (S.sort === 'name') g.sort((a, b) => display(S.group, a).localeCompare(display(S.group, b)));
+  else g.sort((a, b) => ord.indexOf(a) - ord.indexOf(b));
+  return g;
+}
+const markColor = (dim, v) => {
+  if (S.highlight && dim === 'persona' && !OUTLIERS.includes(v)) return 'var(--muted-fill)';
+  if (S.highlight && dim !== 'persona') return 'var(--s1)';
+  return colorOf(dim, v);
+};
+
+// ---------- svg helpers ----------
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent, text) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; parent && parent.appendChild(e); return e; }
+// bar with 4px rounded data-end, square at baseline (horizontal, grows right)
+function hbar(g, x0, x1, y, h, color, tip) {
+  const w = Math.max(0, x1 - x0); if (w <= 0) return;
+  const r = Math.min(4, w, h / 2);
+  const d = `M${x0},${y}H${x0 + w - r}Q${x0 + w},${y} ${x0 + w},${y + r}V${y + h - r}Q${x0 + w},${y + h} ${x0 + w - r},${y + h}H${x0}Z`;
+  return el('path', { d, style: `fill:${color}`, 'data-tip': tip }, g);
+}
+function rrect(g, x, y, w, h, color, tip, r = 4) { if (w <= 0) return; return el('rect', { x, y, width: w, height: h, rx: Math.min(r, w / 2), style: `fill:${color}`, 'data-tip': tip }, g); }
+function niceTicks(max, n = 5) {
+  if (!(max > 0)) return [0, 1];
+  const step0 = max / n, p = Math.pow(10, Math.floor(Math.log10(step0)));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * p).find(s => s >= step0);
+  const t = []; for (let v = 0; v <= max + step * 0.001; v += step) t.push(+v.toPrecision(12));
+  if (t[t.length - 1] < max) t.push(+(t[t.length - 1] + step).toPrecision(12));
+  return t;
+}
+function logTicks(min, max) { const t = []; for (let e = Math.floor(Math.log10(min)); e <= Math.ceil(Math.log10(max)); e++) t.push(Math.pow(10, e)); return t; }
+const tickFmt = v => Math.abs(v) >= 1e6 ? (v / 1e6) + 'M' : Math.abs(v) >= 1e4 ? (v / 1e3) + 'K' : v.toLocaleString(undefined, { maximumFractionDigits: 4 });
+function textWidth(s, size = 12) { const c = textWidth.c || (textWidth.c = document.createElement('canvas').getContext('2d')); c.font = `${size}px system-ui, -apple-system, "Segoe UI", sans-serif`; return c.measureText(s).width; }
+
+function xAxis(g, x, ticks, top, bottom, fmt = tickFmt) {
+  for (const t of ticks) {
+    const X = x(t);
+    el('line', { x1: X, x2: X, y1: top, y2: bottom, class: t === 0 ? 'base' : 'grid' }, g);
+    el('text', { x: X, y: bottom + 16, 'text-anchor': 'middle', class: 'tick' }, g, fmt(t));
+  }
+}
+
+// ---------- renderers ----------
+let lastTable = { head: [], rows: [] };
+function render() {
+  syncControls();
+  const host = $('chart'); host.innerHTML = '';
+  const W = Math.max(320, host.clientWidth);
+  const c = CHARTS[S.chart];
+  $('notice').style.display = 'none';
+  $('legend').innerHTML = '';
+  const m = M[S.measure];
+  $('subtitle').textContent = c.dist
+    ? `${S.distTok === 'input_tokens' ? 'Prompt' : 'Answer'} size per successful request, by ${DIMS[S.group].label.toLowerCase()} · tokens · as of Oct 2026`
+    : `${m.label} · by ${DIMS[S.group].label.toLowerCase()}${S.split !== 'none' ? ', split by ' + DIMS[S.split].label.toLowerCase() : ''} · Oct 1–30 2026`;
+  const svg = el('svg', { width: W, role: 'img' }, host);
+  let H;
+  if (c.dist) H = drawBox(svg, W);
+  else if (S.chart === 'heatmap') H = drawHeatmap(svg, W);
+  else if (S.chart === 'multiples') H = drawMultiples(svg, W);
+  else if (S.chart === 'dumbbell') H = drawDumbbell(svg, W);
+  else if (S.split !== 'none' && ['grouped', 'stacked', 'stack100', 'bar'].includes(S.chart)) H = drawSplitBars(svg, W);
+  else H = drawSingle(svg, W);
+  svg.setAttribute('height', H); svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('aria-label', `${$('title').textContent || CHARTS[S.chart].label}. ${$('subtitle').textContent}`);
+  drawTable();
+  $('src').textContent = `Source: ${D.meta.note} ${D.meta.rows.toLocaleString()} requests, ${D.meta.date_min} to ${D.meta.date_max}. Failed requests count as $0 and 0 Wh (no token data).` + (S.personas.size < 6 && !c.dist ? ` Filtered to ${S.personas.size} of 6 personas.` : '');
+}
+
+function legendFor(dim, values) {
+  $('legend').innerHTML = values.map(v => `<span><i style="background:${markColor(dim, v)}"></i>${display(dim, v)}</span>`).join('');
+}
+function notice(msg) { $('notice').textContent = msg; $('notice').style.display = 'block'; }
+function labelCol(groups) { return Math.min(220, Math.max(90, ...groups.map(g => textWidth(display(S.group, g)) + 16))); }
+
+function drawSingle(svg, W) {
+  const m = M[S.measure];
+  const agg = aggregate(rowsFiltered(), r => r[DIMS[S.group].key]);
+  const val = g => m.v(agg.get(g));
+  const groups = orderGroups([...agg.keys()], val);
+  const showRange = S.range && m.lo && !$('range').disabled;
+  const L = labelCol(groups), R = 70, top = 8, rowH = 34, bottom = top + groups.length * rowH;
+  const vals = groups.map(val).filter(v => v != null);
+  const maxV = Math.max(...vals, ...(showRange ? groups.map(g => m.hi(agg.get(g)) ?? 0) : [0]));
+  const useLog = S.log && CHARTS[S.chart].log && Math.min(...vals) > 0;
+  let x, ticks;
+  if (useLog) {
+    const mn = Math.min(...vals, ...(showRange ? groups.map(g => m.lo(agg.get(g))) : [])) * 0.8;
+    ticks = logTicks(mn, maxV); const a = Math.log10(ticks[0]), b = Math.log10(ticks[ticks.length - 1]);
+    x = v => L + (Math.log10(v) - a) / (b - a) * (W - L - R);
+  } else { ticks = niceTicks(maxV); x = v => L + v / ticks[ticks.length - 1] * (W - L - R); }
+  const g = el('g', {}, svg);
+  xAxis(g, x, ticks, top, bottom);
+  lastTable = { head: [DIMS[S.group].label, m.label, ...(m.lo ? ['Low', 'High'] : [])], rows: [] };
+  groups.forEach((grp, i) => {
+    const a = agg.get(grp), v = val(grp), y = top + i * rowH, cy = y + rowH / 2;
+    const name = display(S.group, grp), col = markColor(S.group, grp);
+    el('text', { x: L - 10, y: cy + 4, 'text-anchor': 'end' }, g, name);
+    lastTable.rows.push([name, v == null ? 'n/a' : m.fmt(v), ...(m.lo ? [m.fmt(m.lo(a)), m.fmt(m.hi(a))] : [])]);
+    if (v == null) { el('text', { x: x(useLog ? ticks[0] : 0) + 6, y: cy + 4, class: 'tick' }, g, 'n/a'); return; }
+    const tip = `<b>${name}</b>${m.label}: ${m.fmt(v)}${m.lo ? `<br>Range: ${m.fmt(m.lo(a))} – ${m.fmt(m.hi(a))}` : ''}<br>${a.calls.toLocaleString()} requests`;
+    const x0 = useLog ? x(ticks[0]) : x(0);
+    if (S.chart === 'bar') hbar(g, x0, x(v), cy - 11, 22, col, tip);
+    else {
+      if (S.chart === 'lollipop') el('line', { x1: x0, x2: x(v), y1: cy, y2: cy, style: `stroke:${col};stroke-width:2` }, g);
+      else el('line', { x1: x0, x2: W - R, y1: cy, y2: cy, class: 'grid' }, g);
+    }
+    if (showRange) {
+      const lo = x(m.lo(a)), hi = x(m.hi(a));
+      el('line', { x1: lo, x2: hi, y1: cy, y2: cy, style: `stroke:var(--ink-2);stroke-width:1.5`, 'data-tip': tip }, g);
+      [lo, hi].forEach(X => el('line', { x1: X, x2: X, y1: cy - 5, y2: cy + 5, style: 'stroke:var(--ink-2);stroke-width:1.5' }, g));
+    }
+    if (S.chart !== 'bar') el('circle', { cx: x(v), cy, r: 6, style: `fill:${col};stroke:var(--surface);stroke-width:2`, 'data-tip': tip }, g);
+    if (S.labels) el('text', { x: (showRange ? Math.max(x(v), x(m.hi(a))) : x(v)) + 10, y: cy + 4, class: 'val' }, g, m.fmt(v));
+    el('rect', { x: L, y, width: W - L - R + 60, height: rowH, fill: 'transparent', 'data-tip': tip }, g).parentNode.insertBefore(g.lastChild, g.firstChild);
+  });
+  if (S.highlight && S.group !== 'persona') notice('Highlight works when grouping or splitting by persona.');
+  return bottom + 28;
+}
+
+function drawSplitBars(svg, W) {
+  const m = M[S.measure], gk = DIMS[S.group].key, sk = DIMS[S.split].key;
+  const rows = rowsFiltered();
+  const tot = aggregate(rows, r => r[gk]);
+  const cell = aggregate(rows, r => r[gk] + '\u0001' + r[sk]);
+  const splits = DIMS[S.split].order.filter(s => rows.some(r => r[sk] === s));
+  const groups = orderGroups([...tot.keys()], g => m.v(tot.get(g)));
+  const mode = S.chart === 'bar' ? (m.add ? 'stacked' : 'grouped') : S.chart;
+  if (S.chart === 'bar') notice(`Sorted bar with a split draws as a ${mode} bar.`);
+  const getV = (g, s) => { const a = cell.get(g + '\u0001' + s); return a ? m.v(a) : null; };
+  legendFor(S.split, splits);
+  const L = labelCol(groups), R = 70, top = 8;
+  const rowH = mode === 'grouped' ? Math.max(34, splits.length * 14 + 12) : 34;
+  const bottom = top + groups.length * rowH;
+  let maxV;
+  if (mode === 'stack100') maxV = 100;
+  else if (mode === 'stacked') maxV = Math.max(...groups.map(g => m.v(tot.get(g))));
+  else maxV = Math.max(...groups.flatMap(g => splits.map(s => getV(g, s) ?? 0)));
+  const ticks = niceTicks(maxV); const x = v => L + v / ticks[ticks.length - 1] * (W - L - R);
+  const g = el('g', {}, svg);
+  xAxis(g, x, ticks, top, bottom, mode === 'stack100' ? v => v + '%' : tickFmt);
+  lastTable = { head: [DIMS[S.group].label, ...splits.map(s => display(S.split, s)), 'Total / overall'], rows: [] };
+  groups.forEach((grp, i) => {
+    const y = top + i * rowH, cy = y + rowH / 2, name = display(S.group, grp);
+    el('text', { x: L - 10, y: cy + 4, 'text-anchor': 'end' }, g, name);
+    const total = m.v(tot.get(grp));
+    lastTable.rows.push([name, ...splits.map(s => { const v = getV(grp, s); return v == null ? '–' : m.fmt(v); }), total == null ? 'n/a' : m.fmt(total)]);
+    if (mode === 'grouped') {
+      const bh = Math.min(12, (rowH - 8) / splits.length - 2);
+      splits.forEach((s, j) => {
+        const v = getV(grp, s); if (v == null) return;
+        const by = y + 4 + j * (bh + 2);
+        hbar(g, x(0), x(v), by, bh, markColor(S.split, s), `<b>${name} · ${display(S.split, s)}</b>${m.label}: ${m.fmt(v)}`);
+      });
+      if (S.labels && total != null) el('text', { x: W - R + 8, y: cy + 4, class: 'tick' }, g, 'all ' + m.fmt(total));
+    } else {
+      let acc = 0; const parts = splits.map(s => [s, getV(grp, s) ?? 0]).filter(p => p[1] > 0);
+      const sum = parts.reduce((t, p) => t + p[1], 0);
+      parts.forEach(([s, v], j) => {
+        const share = 100 * v / sum, vv = mode === 'stack100' ? share : v;
+        const x0 = x(acc) + (j ? 1 : 0), x1 = x(acc + vv) - (j < parts.length - 1 ? 1 : 0);
+        const tip = `<b>${name} · ${display(S.split, s)}</b>${m.label}: ${m.fmt(v)}<br>${share.toFixed(1)}% of row`;
+        if (j === parts.length - 1) hbar(g, x0, x1, cy - 11, 22, markColor(S.split, s), tip);
+        else rrect(g, x0, cy - 11, x1 - x0, 22, markColor(S.split, s), tip, 0);
+        const lbl = mode === 'stack100' ? share.toFixed(0) + '%' : '';
+        if (S.labels && lbl && textWidth(lbl, 11) + 8 < x1 - x0) el('text', { x: x0 + 4, y: cy + 4, style: `fill:${DIMS[S.split].order.indexOf(s) % 8 === 3 ? '#0b0b0b' : '#ffffff'};font-size:11px` }, g, lbl);
+        acc += vv;
+      });
+      if (S.labels && mode === 'stacked') el('text', { x: x(acc) + 8, y: cy + 4, class: 'val' }, g, m.fmt(sum));
+    }
+  });
+  return bottom + 28;
+}
+
+function drawHeatmap(svg, W) {
+  const m = M[S.measure], gk = DIMS[S.group].key, sk = DIMS[S.split].key;
+  const rows = rowsFiltered();
+  const tot = aggregate(rows, r => r[gk]);
+  const cell = aggregate(rows, r => r[gk] + '\u0001' + r[sk]);
+  const splits = DIMS[S.split].order.filter(s => rows.some(r => r[sk] === s));
+  const groups = orderGroups([...tot.keys()], g => m.v(tot.get(g)));
+  const L = labelCol(groups), top = 44, rowH = 36;
+  const cw = Math.min(150, (W - L - 4) / splits.length);
+  const vals = []; groups.forEach(g => splits.forEach(s => { const a = cell.get(g + '\u0001' + s); if (a) { const v = m.v(a); if (v != null) vals.push(v); } }));
+  const mn = Math.min(...vals), mx = Math.max(...vals);
+  const RAMP = ['#cde2fb', '#b7d3f6', '#9ec5f4', '#86b6ef', '#6da7ec', '#5598e7', '#3987e5', '#2a78d6', '#256abf', '#1c5cab', '#184f95', '#104281', '#0d366b'];
+  const g = el('g', {}, svg);
+  splits.forEach((s, j) => {
+    const lbl = display(S.split, s), X = L + j * cw + cw / 2;
+    el('text', { x: X, y: top - 12, 'text-anchor': 'middle', style: 'font-size:11px' }, g, textWidth(lbl, 11) > cw - 4 ? lbl.slice(0, Math.floor((cw - 4) / 6.5)) + '…' : lbl);
+  });
+  lastTable = { head: [DIMS[S.group].label, ...splits.map(s => display(S.split, s))], rows: [] };
+  groups.forEach((grp, i) => {
+    const y = top + i * rowH, name = display(S.group, grp);
+    el('text', { x: L - 10, y: y + rowH / 2 + 4, 'text-anchor': 'end' }, g, name);
+    const tr = [name];
+    splits.forEach((s, j) => {
+      const a = cell.get(grp + '\u0001' + s), v = a ? m.v(a) : null;
+      tr.push(v == null ? '–' : m.fmt(v));
+      const X = L + j * cw;
+      if (v == null) { el('rect', { x: X + 1, y: y + 1, width: cw - 2, height: rowH - 2, rx: 4, style: 'fill:var(--page)' }, g); return; }
+      const t = mx > mn ? (v - mn) / (mx - mn) : 0.5, k = Math.round(t * (RAMP.length - 1));
+      rrect(g, X + 1, y + 1, cw - 2, rowH - 2, RAMP[k], `<b>${name} · ${display(S.split, s)}</b>${m.label}: ${m.fmt(v)}`);
+      if (S.labels) el('text', { x: X + cw / 2, y: y + rowH / 2 + 4, 'text-anchor': 'middle', style: `fill:${k >= 6 ? '#ffffff' : '#0b0b0b'};font-size:12px;font-variant-numeric:tabular-nums` }, g, m.fmt(v));
+    });
+    lastTable.rows.push(tr);
+  });
+  $('legend').innerHTML = `<span>Low ${m.fmt(mn)}</span><span style="gap:0">${[0, 3, 6, 9, 12].map(k => `<i style="background:${RAMP[k]};border-radius:0;width:18px"></i>`).join('')}</span><span>High ${m.fmt(mx)}</span><span>· blank = no requests</span>`;
+  return top + groups.length * rowH + 8;
+}
+
+function drawMultiples(svg, W) {
+  const m = M[S.measure], gk = DIMS[S.group].key, sk = DIMS[S.split].key;
+  const rows = rowsFiltered();
+  const cell = aggregate(rows, r => r[gk] + '\u0001' + r[sk]);
+  const tot = aggregate(rows, r => r[gk]);
+  const splits = DIMS[S.split].order.filter(s => rows.some(r => r[sk] === s));
+  const groups = orderGroups([...tot.keys()], g => m.v(tot.get(g)));
+  const getV = (g, s) => { const a = cell.get(g + '\u0001' + s); return a ? m.v(a) : null; };
+  const cols = W > 900 ? 3 : W > 560 ? 2 : 1, pw = W / cols;
+  const L = Math.min(150, labelCol(groups)), R = 56, rowH = 24, ph = 30 + groups.length * rowH + 30;
+  const maxV = Math.max(...groups.flatMap(g => splits.map(s => getV(g, s) ?? 0)));
+  const ticks = niceTicks(maxV, 3);
+  lastTable = { head: [DIMS[S.group].label, ...splits.map(s => display(S.split, s))], rows: groups.map(g => [display(S.group, g), ...splits.map(s => { const v = getV(g, s); return v == null ? '–' : m.fmt(v); })]) };
+  splits.forEach((s, k) => {
+    const ox = (k % cols) * pw, oy = Math.floor(k / cols) * ph;
+    const g = el('g', { transform: `translate(${ox},${oy})` }, svg);
+    el('rect', { x: 0, y: 4, width: 10, height: 10, rx: 3, style: `fill:${colorOf(S.split, s)}` }, g);
+    el('text', { x: 16, y: 13, class: 'panel-t' }, g, display(S.split, s));
+    const x = v => L + v / ticks[ticks.length - 1] * (pw - L - R);
+    xAxis(g, x, ticks, 26, 26 + groups.length * rowH);
+    groups.forEach((grp, i) => {
+      const cy = 26 + i * rowH + rowH / 2, v = getV(grp, s), name = display(S.group, grp);
+      el('text', { x: L - 8, y: cy + 4, 'text-anchor': 'end', style: 'font-size:11px' }, g, textWidth(name, 11) > L - 12 ? name.slice(0, Math.floor((L - 12) / 6.2)) + '…' : name);
+      if (v == null) { el('text', { x: x(0) + 4, y: cy + 4, class: 'tick' }, g, '–'); return; }
+      hbar(g, x(0), x(v), cy - 8, 16, markColor(S.split, s), `<b>${name} · ${display(S.split, s)}</b>${m.label}: ${m.fmt(v)}`);
+      if (S.labels) el('text', { x: x(v) + 6, y: cy + 4, class: 'val', style: 'font-size:11px' }, g, m.fmt(v));
+    });
+  });
+  return Math.ceil(splits.length / cols) * ph;
+}
+
+function drawDumbbell(svg, W) {
+  const m = M[S.measure], gk = DIMS[S.group].key;
+  const agg = aggregate(rowsFiltered(), r => r[gk]);
+  let tc = 0, tm = 0; for (const a of agg.values()) { tc += a.calls; tm += m.v(a); }
+  const sh = g => ({ c: 100 * agg.get(g).calls / tc, m: 100 * m.v(agg.get(g)) / tm });
+  const groups = orderGroups([...agg.keys()], g => sh(g).m - sh(g).c);
+  const L = labelCol(groups), R = 80, top = 8, rowH = 34, bottom = top + groups.length * rowH;
+  const maxV = Math.max(...groups.flatMap(g => [sh(g).c, sh(g).m]));
+  const ticks = niceTicks(maxV); const x = v => L + v / ticks[ticks.length - 1] * (W - L - R);
+  const g = el('g', {}, svg);
+  xAxis(g, x, ticks, top, bottom, v => v + '%');
+  $('legend').innerHTML = `<span><i style="background:var(--muted);border-radius:50%"></i>Share of requests</span><span><i style="background:var(--s1);border-radius:50%"></i>Share of ${m.label.split(' (')[0].toLowerCase()}</span>`;
+  lastTable = { head: [DIMS[S.group].label, 'Share of requests', 'Share of ' + m.label, 'Gap (points)'], rows: [] };
+  groups.forEach((grp, i) => {
+    const s = sh(grp), cy = top + i * rowH + rowH / 2, name = display(S.group, grp);
+    el('text', { x: L - 10, y: cy + 4, 'text-anchor': 'end' }, g, name);
+    const tip = `<b>${name}</b>Share of requests: ${s.c.toFixed(1)}%<br>Share of ${m.label}: ${s.m.toFixed(1)}%`;
+    el('line', { x1: x(s.c), x2: x(s.m), y1: cy, y2: cy, style: 'stroke:var(--axis);stroke-width:3' }, g);
+    el('circle', { cx: x(s.c), cy, r: 6, style: 'fill:var(--muted);stroke:var(--surface);stroke-width:2', 'data-tip': tip }, g);
+    el('circle', { cx: x(s.m), cy, r: 6, style: 'fill:var(--s1);stroke:var(--surface);stroke-width:2', 'data-tip': tip }, g);
+    if (S.labels) el('text', { x: Math.max(x(s.c), x(s.m)) + 12, y: cy + 4, class: 'val' }, g, `${s.c.toFixed(0)}% → ${s.m.toFixed(0)}%`);
+    lastTable.rows.push([name, s.c.toFixed(1) + '%', s.m.toFixed(1) + '%', (s.m - s.c).toFixed(1)]);
+  });
+  return bottom + 28;
+}
+
+function drawBox(svg, W) {
+  const q = D.dist[S.group][S.distTok];
+  const groups = orderGroups(Object.keys(q), g => q[g][2]);
+  const L = labelCol(groups), R = 70, top = 8, rowH = 34, bottom = top + groups.length * rowH;
+  const mn = Math.min(...groups.map(g => q[g][0])), mx = Math.max(...groups.map(g => q[g][4]));
+  let x, ticks;
+  if (S.log) { ticks = logTicks(Math.max(1, mn * 0.8), mx); const a = Math.log10(ticks[0]), b = Math.log10(ticks[ticks.length - 1]); x = v => L + (Math.log10(Math.max(v, 1)) - a) / (b - a) * (W - L - R); }
+  else { ticks = niceTicks(mx); x = v => L + v / ticks[ticks.length - 1] * (W - L - R); }
+  const g = el('g', {}, svg);
+  xAxis(g, x, ticks, top, bottom);
+  lastTable = { head: [DIMS[S.group].label, '10th pct', '25th', 'Median', '75th', '90th'], rows: [] };
+  groups.forEach((grp, i) => {
+    const [p10, p25, p50, p75, p90] = q[grp], cy = top + i * rowH + rowH / 2, name = display(S.group, grp), col = markColor(S.group, grp);
+    el('text', { x: L - 10, y: cy + 4, 'text-anchor': 'end' }, g, name);
+    const tip = `<b>${name}</b>Median ${n0(p50)} tokens<br>Middle 50%: ${n0(p25)}–${n0(p75)}<br>10th–90th pct: ${n0(p10)}–${n0(p90)}`;
+    el('line', { x1: x(p10), x2: x(p90), y1: cy, y2: cy, style: `stroke:${col};stroke-width:2` }, g);
+    [p10, p90].forEach(v => el('line', { x1: x(v), x2: x(v), y1: cy - 6, y2: cy + 6, style: `stroke:${col};stroke-width:2` }, g));
+    el('rect', { x: x(p25), y: cy - 10, width: Math.max(2, x(p75) - x(p25)), height: 20, rx: 4, style: `fill:${col};opacity:.85`, 'data-tip': tip }, g);
+    el('line', { x1: x(p50), x2: x(p50), y1: cy - 10, y2: cy + 10, style: 'stroke:var(--surface);stroke-width:3' }, g);
+    if (S.labels) el('text', { x: x(p90) + 10, y: cy + 4, class: 'val' }, g, 'median ' + n0(p50));
+    lastTable.rows.push([name, n0(p10), n0(p25), n0(p50), n0(p75), n0(p90)]);
+  });
+  return bottom + 28;
+}
+
+function drawTable() {
+  const w = $('tableWrap');
+  if (!S.table) { w.innerHTML = ''; return; }
+  w.innerHTML = `<table><thead><tr>${lastTable.head.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${lastTable.rows.map(r => `<tr>${r.map((c, i) => `<td class="${i ? 'n' : ''}">${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+}
+
+// ---------- tooltip ----------
+const tip = $('tip');
+$('chart').addEventListener('mousemove', e => {
+  const t = e.target.closest('[data-tip]');
+  if (!t) { tip.style.display = 'none'; return; }
+  tip.innerHTML = t.getAttribute('data-tip'); tip.style.display = 'block';
+  const r = tip.getBoundingClientRect();
+  tip.style.left = Math.min(e.clientX + 14, innerWidth - r.width - 8) + 'px';
+  tip.style.top = Math.min(e.clientY + 14, innerHeight - r.height - 8) + 'px';
+});
+$('chart').addEventListener('mouseleave', () => tip.style.display = 'none');
+
+// ---------- actions ----------
+function setupText() {
+  const c = CHARTS[S.chart];
+  return [`Chart: ${c.label}`, `Measure: ${c.dist ? S.distTok : M[S.measure].label}`, `Group: ${DIMS[S.group].label}`,
+    `Split: ${S.split === 'none' ? 'none' : DIMS[S.split].label}`, `Sort: ${S.sort}`,
+    `Personas: ${S.personas.size === 6 ? 'all 6' : [...S.personas].join(', ')}`,
+    S.highlight ? 'Highlight Dev & Sandbox' : '', S.log && c.log ? 'Log scale' : '',
+    $('title').textContent ? `Title: "${$('title').textContent}"` : ''].filter(Boolean).join(' · ');
+}
+$('copy').onclick = async () => { try { await navigator.clipboard.writeText(setupText()); $('copy').textContent = 'Copied ✓'; } catch { prompt('Copy this:', setupText()); } setTimeout(() => $('copy').textContent = 'Copy setup (for process-log)', 1500); };
+$('png').onclick = () => {
+  const svg = $('chart').querySelector('svg').cloneNode(true);
+  const cs = getComputedStyle(document.documentElement);
+  let s = new XMLSerializer().serializeToString(svg).replace(/var\((--[\w-]+)\)/g, (_, v) => cs.getPropertyValue(v).trim());
+  s = s.replace('<svg', `<svg style="background:${cs.getPropertyValue('--surface')};font-family:system-ui,sans-serif"`).replace(/class="tick"/g, `class="tick" fill="${cs.getPropertyValue('--muted')}" font-size="11"`).replace(/class="val"/g, `class="val" fill="${cs.getPropertyValue('--ink')}"`).replace(/class="grid"/g, `class="grid" stroke="${cs.getPropertyValue('--grid')}"`).replace(/class="base"/g, `class="base" stroke="${cs.getPropertyValue('--axis')}"`);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([s], { type: 'image/svg+xml' })); a.download = `explorer-${S.chart}-${S.measure}-${S.group}.svg`; a.click();
+};
+$('title').addEventListener('input', () => { const svg = $('chart').querySelector('svg'); if (svg) svg.setAttribute('aria-label', `${$('title').textContent}. ${$('subtitle').textContent}`); });
+
+let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(render, 120); });
+render();
+})();
+</script>
+</body>
+</html>

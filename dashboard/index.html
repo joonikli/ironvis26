@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smarter AI at CMU</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+  --hi: #eb6834;         /* Dev & Sandbox (categorical slot 2) */
+  --base: #b5b3ab;       /* efficient majority, muted (D21) */
+  --req: #c3c2b7;        /* share of requests */
+  --cost: #2a78d6;       /* share of cost (slot 1) */
+  --energy: #1baf7a;     /* share of energy (slot 3) */
+  --band: rgba(42,120,214,0.14);
+  --good: #006300; --bad: #b4441c;
+  --tag-habit: #e6f0fb; --tag-detail: #f4efe6;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --hi: #d95926; --base: #5a5a55; --req: #5a5a55; --cost: #3987e5; --energy: #199e70;
+    --band: rgba(57,135,229,0.22); --good: #0ca30c; --bad: #e66767;
+    --tag-habit: #1d2b3d; --tag-detail: #33291c;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+  --hi: #d95926; --base: #5a5a55; --req: #5a5a55; --cost: #3987e5; --energy: #199e70;
+  --band: rgba(57,135,229,0.22); --good: #0ca30c; --bad: #e66767;
+  --tag-habit: #1d2b3d; --tag-detail: #33291c;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 32px 24px 40px; }
+@media (max-width: 700px) { .wrap { padding: 20px 16px 32px; } }
+.eyebrow { font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+h1 { font-size: 30px; line-height: 1.2; margin: 6px 0 10px; font-weight: 650; max-width: 980px; text-wrap: balance; }
+h1 em { font-style: normal; color: var(--hi); }
+.q { color: var(--ink-2); max-width: 900px; margin: 0 0 12px; }
+.pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.pill { font-size: 12px; border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px; color: var(--ink-2); background: var(--surface); }
+section { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 22px 24px; margin-top: 18px; }
+@media (max-width: 700px) { section { padding: 18px 16px; } }
+.step { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+h2 { font-size: 20px; margin: 4px 0 4px; font-weight: 620; text-wrap: balance; }
+.how { color: var(--ink-2); font-size: 13.5px; margin: 0 0 16px; max-width: 900px; }
+.note { color: var(--muted); font-size: 12px; margin-top: 12px; }
+
+/* KPI tiles */
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 22px; }
+@media (max-width: 860px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
+.kpi .lab { font-size: 13px; color: var(--ink-2); }
+.kpi .val { font-size: 34px; font-weight: 650; line-height: 1.15; margin: 4px 0 2px; }
+.kpi .val small { font-size: 16px; font-weight: 500; color: var(--ink-2); }
+.kpi .ctx { font-size: 12.5px; color: var(--muted); }
+.kpi.soft .val { font-size: 26px; }
+
+/* persona cards */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--ink-2); margin-bottom: 14px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 12px; height: 10px; border-radius: 3px; display: inline-block; }
+.sw.band { background: var(--band); border-left: 2px solid var(--cost); border-right: 2px solid var(--cost); border-radius: 0; }
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 960px) { .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 620px) { .cards { grid-template-columns: 1fr; } }
+.card { border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; background: var(--page); }
+.card.out { border-color: color-mix(in srgb, var(--hi) 55%, transparent); }
+.card h3 { margin: 0; font-size: 15.5px; font-weight: 620; display: flex; align-items: center; gap: 8px; }
+.card h3 i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+.card .meta { font-size: 12px; color: var(--muted); margin: 2px 0 10px; }
+.habit { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; margin-bottom: 9px; font-size: 12.5px; }
+.habit .hn { color: var(--ink-2); }
+.habit .hv { font-variant-numeric: tabular-nums; text-align: right; }
+.habit .hv b { font-weight: 600; }
+.mark { font-weight: 700; margin-left: 4px; }
+.mark.ok { color: var(--good); } .mark.no { color: var(--bad); }
+.track { grid-column: 1 / -1; position: relative; height: 8px; border-radius: 4px; background: var(--grid); }
+.track .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 0 4px 4px 0; }
+.track .bandm { position: absolute; top: -3px; bottom: -3px; background: var(--band); border-left: 2px solid var(--cost); border-right: 2px solid var(--cost); }
+.role { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--grid); font-size: 12.5px; color: var(--ink-2); }
+.role b { color: var(--ink); }
+
+/* share bars (E5) */
+.share { display: grid; grid-template-columns: 170px 1fr; gap: 6px 14px; align-items: center; max-width: 980px; }
+@media (max-width: 620px) { .share { grid-template-columns: 1fr; } }
+.share .rl { font-weight: 600; font-size: 14px; }
+.share .rl small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+.bars { display: grid; gap: 4px; padding: 6px 0; }
+.br { display: flex; align-items: center; gap: 10px; font-size: 12.5px; white-space: nowrap; }
+.br .b { height: 14px; border-radius: 0 4px 4px 0; min-width: 2px; flex: none; }
+.br .t { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.br .t b { color: var(--ink); }
+.sep { grid-column: 1 / -1; border-top: 1px solid var(--grid); }
+.callout { margin-top: 16px; display: flex; gap: 14px; flex-wrap: wrap; }
+.callout div { background: var(--page); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; color: var(--ink-2); flex: 1 1 260px; }
+.callout b { color: var(--ink); font-size: 18px; display: block; }
+
+/* opportunity */
+.opp { display: grid; grid-template-columns: 1fr 1fr 280px; gap: 18px; }
+@media (max-width: 960px) { .opp { grid-template-columns: 1fr; } }
+.opp h3 { margin: 0 0 2px; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.opp h3 i { width: 10px; height: 10px; border-radius: 50%; background: var(--hi); display: inline-block; }
+.opp .meta { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+.lever { display: grid; grid-template-columns: 150px 1fr; gap: 4px 10px; align-items: center; margin-bottom: 10px; font-size: 12.5px; }
+.lever .ln { color: var(--ink-2); grid-row: span 2; }
+.lever.all .ln { color: var(--ink); font-weight: 600; }
+.lb { display: grid; grid-template-columns: 1fr 76px; align-items: center; gap: 6px; white-space: nowrap; }
+.lb .b { height: 10px; border-radius: 0 4px 4px 0; min-width: 2px; }
+.lb .t { font-variant-numeric: tabular-nums; color: var(--ink-2); text-align: right; }
+.bigtile { background: var(--page); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: grid; gap: 14px; align-content: start; }
+.bigtile .v { font-size: 30px; font-weight: 650; line-height: 1.1; }
+.bigtile .l { font-size: 13px; color: var(--ink-2); }
+
+/* recommendations */
+.recs { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.recs th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 600; padding: 6px 10px; border-bottom: 1px solid var(--axis); }
+.recs td { padding: 10px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+.recs td:first-child { font-weight: 600; width: 22%; }
+.recs td .sub { display: block; font-weight: 400; font-size: 12px; color: var(--muted); }
+.recs .ev { color: var(--ink-2); width: 30%; }
+.tag { display: inline-block; font-size: 11.5px; padding: 2px 8px; border-radius: 999px; white-space: nowrap; margin: 0 4px 4px 0; color: var(--ink); }
+.tag.habit { background: var(--tag-habit); }
+.tag.detail { background: var(--tag-detail); }
+.tablewrap { overflow-x: auto; }
+.living { margin-top: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+@media (max-width: 760px) { .living { grid-template-columns: 1fr; } }
+.living div { border: 1px dashed var(--axis); border-radius: 10px; padding: 10px 12px; font-size: 13px; color: var(--ink-2); }
+.living b { color: var(--ink); display: block; }
+.living code { font-family: ui-monospace, Consolas, monospace; font-size: 12px; color: var(--ink); }
+
+footer { margin-top: 18px; font-size: 12px; color: var(--muted); line-height: 1.55; }
+footer h4 { margin: 12px 0 4px; font-size: 12px; color: var(--ink-2); text-transform: uppercase; letter-spacing: .04em; }
+footer ul { margin: 0; padding-left: 18px; }
+#tip { position: fixed; pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.14); display: none; max-width: 260px; z-index: 5; }
+.themebtn { position: absolute; top: 16px; right: 16px; font: inherit; font-size: 12px; color: var(--ink-2); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+@media print { .themebtn { display: none; } body { background: #fff; } section, .kpi { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<button class="themebtn" id="theme">Light / dark</button>
+<div class="wrap">
+  <div class="eyebrow">CMU Student IronViz 2026 · Intelligence at Scale · data as of Oct 2026</div>
+  <h1>Four of six campus groups already use AI efficiently. If <em>Dev and Sandbox</em> matched them, CMU would spend <span id="h-cost"></span> less and use <span id="h-kwh"></span> less energy every month.</h1>
+  <p class="q">Which AI habits should each part of campus change to lower cost and resource use? We compared 30 days of AI requests from six campus groups.</p>
+  <div class="pills"><span class="pill">Synthetic data provided by the competition</span><span class="pill">Energy and carbon are estimates (shown as ranges)</span><span class="pill">Prices are public list prices</span></div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <section aria-labelledby="s1">
+    <div class="step">1 · Who uses AI how</div>
+    <h2 id="s1">Dev and Sandbox send longer prompts, reuse almost none of them, and send 5× more broken requests</h2>
+    <p class="how">One card per group. Each bar is that group's value; the blue band is the range of the four efficient groups. ✓ = inside or better than that range, ✕ = clearly worse. Prompt size is compared with groups that use the same AI provider.</p>
+    <div class="legend"><span><i class="sw" style="background:var(--hi)"></i>Experimental work (Dev, Sandbox)</span><span><i class="sw" style="background:var(--base)"></i>Efficient majority</span><span><i class="sw band"></i>Range of the efficient majority</span></div>
+    <div class="cards" id="cards"></div>
+    <p class="note">Students are not labeled in the data. We treat <b>experimental work</b> (Sandbox testing, development) as the closest match to student use; this is an assumption. Researchers (R&amp;D) behave like the efficient majority. The four efficient groups are statistically the same: 0 of 42 tests showed a meaningful difference.</p>
+  </section>
+
+  <section aria-labelledby="s2">
+    <div class="step">2 · What drives the bill</div>
+    <h2 id="s2">The reasoning model handles 1 in 10 OpenAI requests but about 2 in 3 dollars</h2>
+    <p class="how">For each type of model: its share of requests (gray), share of cost (blue), and share of estimated energy (green). A long blue bar next to a short gray bar means the model is expensive for how often it's used. OpenAI groups only; Gemini groups had no reasoning model.</p>
+    <div class="share" id="share"></div>
+    <div class="callout" id="callout"></div>
+    <p class="note">Model names are from the October 2026 data and are already retired or retiring (o1-preview was shut down in 2025). The habit holds when names change: use a reasoning model only for multi-step problems. The o1-preview price ($15 / $60 per 1M tokens) comes from third-party sources and is not verified.</p>
+  </section>
+
+  <section aria-labelledby="s3">
+    <div class="step">3 · The opportunity</div>
+    <h2 id="s3">Matching CMU's efficient groups would cut Dev's AI cost by about a third and Sandbox's by about half</h2>
+    <p class="how">Monthly savings if each group adopted habits CMU's efficient groups already show. Each target comes from a CMU group, not from an outside benchmark. Blue = cost saved, green = energy saved. The habits overlap, so the parts don't add up to the "all three" row.</p>
+    <div class="opp" id="opp"></div>
+  </section>
+
+  <section aria-labelledby="s4">
+    <div class="step">4 · Recommendations</div>
+    <h2 id="s4">Build habits that will still work when the models change</h2>
+    <p class="how"><span class="tag habit">Lasting habit</span> works with any model. <span class="tag detail">Expiring detail</span> names a model or price that will change; check it again at each model switch.</p>
+    <div class="tablewrap"><table class="recs" id="recs"></table></div>
+    <div class="living" id="living"></div>
+  </section>
+
+  <footer>
+    <h4>Limits</h4>
+    <ul>
+      <li>The data is <b>synthetic</b> (202,650 requests, Oct 1–30 2026, two providers, six groups). It contains none of the anomalies described in the competition slides (no 500 errors, no runaway loops, no time-of-day peaks), so we did not analyze them.</li>
+      <li><b>Energy and carbon are estimates</b>, not measurements: published per-model benchmarks scaled by token counts. Gemini and o1-preview use stand-in benchmarks. Carbon depends mostly on which power grid serves the data center, which the logs don't say.</li>
+      <li>Failed requests (400 and 429 errors) are not billed and have no token counts, so they count as $0 and 0 Wh here. Their real cost is wasted time.</li>
+      <li>Savings assume habits change without changing the work itself. The data can't confirm this.</li>
+    </ul>
+    <h4>Sources</h4>
+    <ul>
+      <li>CMU (2026), <i>Fall 2026 Student IronViz Data Dictionary &amp; Quality Guide</i> and information session slides.</li>
+      <li>Jegham, N. et al. (2025), <i>How Hungry is AI?</i> arXiv:2505.09598v5, per-model energy (Table 4) and Azure carbon intensity (Table 1).</li>
+      <li>Elsworth, C. et al. (2025), <i>Measuring the environmental impact of delivering AI at Google Scale</i>, arXiv:2508.15734 (0.24 Wh median prompt, low-end scale).</li>
+      <li>CodeCarbon, <i>cloud/impact.csv</i> grid carbon intensity (94 and 588 g CO₂e/kWh bounds). OpenAI API pricing page and Google Developers Blog (2024) for prices; accessed Nov 14 2026.</li>
+    </ul>
+  </footer>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script src="data.js"></script>
+<script>
+(() => {
+const D = window.DASH;
+const $ = id => document.getElementById(id);
+const usd0 = v => '$' + Math.round(v).toLocaleString();
+const n0 = v => Math.round(v).toLocaleString();
+const ORDER = ['org-engineering-dev', 'prj-ai-sandbox-testing', 'org-prod-core', 'prj-ai-enterprise-prod', 'org-marketing-ai', 'prj-ai-r-and-d'];
+const SHORT = { 'org-engineering-dev': 'Engineering / Developers', 'prj-ai-sandbox-testing': 'Sandbox Testers' };
+const ENV = { 'org-engineering-dev': 'Development', 'prj-ai-sandbox-testing': 'Sandbox testing', 'org-prod-core': 'Production', 'prj-ai-enterprise-prod': 'Production', 'org-marketing-ai': 'Business', 'prj-ai-r-and-d': 'Research' };
+const PROV = { openai: 'OpenAI', gemini: 'Gemini' };
+const cl = D.campus_local, h = D.headline;
+
+// headline
+$('h-cost').textContent = usd0(-cl.d_cost) + ' (' + Math.round(-cl.d_cost_pct) + '%)';
+$('h-kwh').textContent = Math.round(-cl.d_kwh_pct) + '%';
+
+// KPIs
+$('kpis').innerHTML = [
+  ['AI requests in 30 days', n0(h.requests), `${n0(h.requests - h.success)} failed (bad request or rate limit)`],
+  ['Cost in 30 days', usd0(h.cost), 'at public list prices'],
+  ['Energy in 30 days', `${Math.round(h.kwh[1])} <small>kWh</small>`, `estimate, range ${Math.round(h.kwh[0])}–${Math.round(h.kwh[2])} kWh`],
+  ['Carbon in 30 days', `${Math.round(h.kgco2e[0])}–${Math.round(h.kgco2e[2])} <small>kg CO₂e</small>`, 'range is wide because it depends on the power grid', 'soft'],
+].map(([l, v, c, cls]) => `<div class="kpi ${cls || ''}"><div class="lab">${l}</div><div class="val">${v}</div><div class="ctx">${c}</div></div>`).join('');
+
+// persona cards
+const M = D.majority;
+const cards = ORDER.map(t => D.cards.find(c => c.tenant === t));
+const maxPromptX = 4, maxCache = 25, max400 = 7;
+$('cards').innerHTML = cards.map(c => {
+  const peer = c.provider === 'openai' ? M.prompt_median_openai : M.prompt_median_gemini;
+  const px = c.prompt_median / peer;
+  const col = c.outlier ? 'var(--hi)' : 'var(--base)';
+  const pOk = px < 1.1, cOk = c.cache_pct >= M.cache_pct[0] * 0.95, eOk = c.r400_pct <= M.r400_pct[1] * 1.05;
+  const mk = ok => ok ? '<span class="mark ok" aria-label="matches">✓</span>' : '<span class="mark no" aria-label="worse">✕</span>';
+  const band = (lo, hi, max) => `<span class="bandm" style="left:${100 * lo / max}%;width:max(4px, ${100 * (hi - lo) / max}%)"></span>`;
+  const bar = (v, max) => `<span class="fill" style="width:${Math.min(100, 100 * v / max)}%;background:${col}"></span>`;
+  const role = c.outlier
+    ? '<b>Role:</b> try new models first and spot problems early — fix these habits before the next switch.'
+    : '<b>Role:</b> stay on fixed model versions with a planned move date; keep these habits.';
+  return `<div class="card ${c.outlier ? 'out' : ''}">
+    <h3><i style="background:${col}"></i>${c.persona}</h3>
+    <div class="meta">${ENV[c.tenant]} · ${PROV[c.provider]} · ${n0(c.requests)} successful requests</div>
+    <div class="habit" data-tip="Median prompt ${n0(c.prompt_median)} tokens vs ${n0(peer)} for efficient ${PROV[c.provider]} groups">
+      <span class="hn">Prompt size vs peers</span><span class="hv"><b>${px.toFixed(1)}×</b>${mk(pOk)}</span>
+      <span class="track">${band(0.95, 1.05, maxPromptX)}${bar(px, maxPromptX)}</span></div>
+    <div class="habit" data-tip="${c.cache_pct.toFixed(1)}% of prompt tokens reused from cache. Efficient groups: ${M.cache_pct[0].toFixed(0)}–${M.cache_pct[1].toFixed(0)}%">
+      <span class="hn">Prompt text reused (cache)</span><span class="hv"><b>${c.cache_pct.toFixed(1)}%</b>${mk(cOk)}</span>
+      <span class="track">${band(M.cache_pct[0], M.cache_pct[1], maxCache)}${bar(c.cache_pct, maxCache)}</span></div>
+    <div class="habit" data-tip="${c.r400_pct.toFixed(1)}% of requests rejected as malformed (HTTP 400). Efficient groups: ${M.r400_pct[0].toFixed(1)}–${M.r400_pct[1].toFixed(1)}%">
+      <span class="hn">Broken requests (400)</span><span class="hv"><b>${c.r400_pct.toFixed(1)}%</b>${mk(eOk)}</span>
+      <span class="track">${band(M.r400_pct[0], M.r400_pct[1], max400)}${bar(c.r400_pct, max400)}</span></div>
+    <div class="meta" style="margin:6px 0 0">Per successful request: $${c.cost_per.toFixed(3)} · ${c.wh_per.toFixed(1)} Wh (estimate)</div>
+    <div class="role">${role}</div>
+  </div>`;
+}).join('');
+
+// share of requests vs cost vs energy
+const P = D.purpose_share;
+const PNAME = { Reasoning: ['Reasoning', 'o1-preview · multi-step problems'], Frontier: ['Frontier', 'gpt-4o · general high-quality work'], 'Small/fast': ['Small / fast', 'gpt-4o-mini · routine tasks'] };
+$('share').innerHTML = Object.keys(PNAME).map((k, i) => {
+  const s = P[k];
+  const row = (lab, v, col) => `<div class="br" data-tip="${PNAME[k][0]}: ${v.toFixed(1)}% of OpenAI ${lab}"><span class="b" style="width:calc((100% - 130px) * ${v / 100});background:${col}"></span><span class="t"><b>${Math.round(v)}%</b> of ${lab}</span></div>`;
+  return `${i ? '<div class="sep"></div>' : ''}<div class="rl">${PNAME[k][0]}<small>${PNAME[k][1]}</small></div>
+    <div class="bars">${row('requests', s.requests, 'var(--req)')}${row('cost', s.cost, 'var(--cost)')}${row('energy', s.energy, 'var(--energy)')}</div>`;
+}).join('');
+$('callout').innerHTML = `<div><b>${D.cost_ratio_reasoning_vs_frontier.toFixed(0)}×</b>One reasoning request costs about as much as ${D.cost_ratio_reasoning_vs_frontier.toFixed(0)} frontier requests.</div>
+  <div><b>${Math.round(P.Reasoning.requests)}% → ${Math.round(P.Reasoning.cost)}%</b>Share of requests vs share of OpenAI cost for the reasoning model. Energy: ${Math.round(P.Reasoning.energy)}%.</div>
+  <div><b>${Math.round(P['Small/fast'].requests)}% → ${P['Small/fast'].cost < 1 ? '&lt;1' : Math.round(P['Small/fast'].cost)}%</b>The small model handles ${Math.round(P['Small/fast'].requests)}% of requests for under 1% of the cost.</div>`;
+
+// opportunity
+const O = D.opportunity;
+const maxPct = 50;
+const panel = t => {
+  const o = O[t];
+  return `<div><h3><i></i>${SHORT[t]}</h3><div class="meta">Today: ${usd0(o.actual_cost)} and ${Math.round(o.actual_kwh)} kWh a month</div>
+  ${o.levers.map(l => `<div class="lever ${l.key === 'L_all' ? 'all' : ''}"><span class="ln">${l.label}</span>
+    <div class="lb" data-tip="${l.label}: saves ${usd0(-l.d_cost)} (${Math.round(-l.d_cost_pct)}%) a month"><span class="b" style="width:${Math.min(100, -l.d_cost_pct / maxPct * 100)}%;background:var(--cost)"></span><span class="t">−${Math.round(-l.d_cost_pct)}% $</span></div>
+    <div class="lb" data-tip="${l.label}: saves about ${Math.round(-l.d_kwh)} kWh (${Math.round(-l.d_kwh_pct)}%) a month (estimate)"><span class="b" style="width:${Math.min(100, -l.d_kwh_pct / maxPct * 100)}%;background:var(--energy)"></span><span class="t">−${Math.round(-l.d_kwh_pct)}% kWh</span></div>
+  </div>`).join('')}</div>`;
+};
+$('opp').innerHTML = panel('org-engineering-dev') + panel('prj-ai-sandbox-testing') + `<div class="bigtile">
+  <div><div class="v">−${usd0(-cl.d_cost)}</div><div class="l">campus cost a month (−${Math.round(-cl.d_cost_pct)}%)</div></div>
+  <div><div class="v">−${Math.round(-cl.d_kwh)} kWh</div><div class="l">campus energy a month (−${Math.round(-cl.d_kwh_pct)}%), estimate range ${Math.round(-cl.d_kwh_low)}–${Math.round(-cl.d_kwh_high)} kWh</div></div>
+  <div><div class="v">${n0(cl.failed_avoided)}</div><div class="l">fewer broken requests a month if Dev and Sandbox matched the efficient groups' 1.1% rate: time that people and pipelines no longer waste</div></div>
+</div>`;
+
+// recommendations
+const dev = O['org-engineering-dev'].levers, sb = O['prj-ai-sandbox-testing'].levers;
+const lv = (arr, k) => Math.round(-arr.find(l => l.key === k).d_cost_pct);
+const habit = '<span class="tag habit">Lasting habit</span>', detail = t => `<span class="tag detail">Expiring detail: ${t}</span>`;
+const R = [
+  ['Experimental work', 'Dev, Sandbox; students learning AI', 'Send only the context the task needs. Trim long prompts.', `Prompts are ${(cards[0].prompt_median / M.prompt_median_openai).toFixed(1)}× and ${(cards[1].prompt_median / M.prompt_median_gemini).toFixed(1)}× peers. Saves ${lv(dev, 'L2_prompt')}% (Dev) and ${lv(sb, 'L2_prompt')}% (Sandbox) of cost.`, habit],
+  ['Experimental work', 'Dev, Sandbox', 'Put fixed instructions at the start of the prompt so the provider can reuse (cache) them.', `They reuse ${cards[0].cache_pct.toFixed(1)}% and ${cards[1].cache_pct.toFixed(1)}% of prompt text vs ${Math.round(M.cache_pct[0])}–${Math.round(M.cache_pct[1])}% elsewhere.`, habit],
+  ['Experimental work', 'Dev, Sandbox', 'Check requests before sending them, so they aren\'t rejected as malformed.', `6% of their requests fail vs about 1.1%: ${n0(cl.failed_avoided)} wasted requests a month.`, habit],
+  ['Experimental work', 'Dev, Sandbox', 'Use the small model for routine work, and the bigger model only when it matters.', `Saves ${lv(sb, 'L3_model_mix')}% of Sandbox cost and ${lv(dev, 'L3_model_mix')}% of Dev cost.`, habit + detail('which model counts as "small"')],
+  ['Everyone using a reasoning model', 'Dev, Production, Marketing', 'Use the reasoning model only for multi-step problems; send everyday tasks to a frontier model.', `10% of OpenAI requests → ${Math.round(P.Reasoning.cost)}% of cost. One reasoning request ≈ ${D.cost_ratio_reasoning_vs_frontier.toFixed(0)} frontier requests.`, habit + detail('o1-preview price and name')],
+  ['Efficient majority', 'Core & Enterprise Production, Marketing, Research', 'Keep current habits. Stay on fixed model versions and plan each move to a new model with a date.', 'Already within CMU\'s best range on prompt size, reuse and broken requests.', habit],
+  ['Campus IT and leadership', 'For deans and IT admins', 'Keep a living table of which model to use for each purpose, and a monthly scorecard per group: prompt size, reuse, broken-request rate.', 'The three scorecard measures separated the groups clearly in this data and work with any model.', habit],
+];
+$('recs').innerHTML = `<thead><tr><th>Who</th><th>Do this</th><th>Why (Oct 2026 data)</th><th>Shelf life</th></tr></thead><tbody>${R.map(r => `<tr><td>${r[0]}<span class="sub">${r[1]}</span></td><td>${r[2]}</td><td class="ev">${r[3]}</td><td>${r[4]}</td></tr>`).join('')}</tbody>`;
+$('living').innerHTML = [
+  ['Reasoning', 'multi-step problems', 'o1-preview'],
+  ['Frontier', 'general high-quality work', 'gpt-4o · gemini-1.5-pro'],
+  ['Small / fast', 'routine tasks', 'gpt-4o-mini · gemini-1.5-flash'],
+].map(([p, use, m]) => `<div><b>${p}: ${use}</b>In this data: <code>${m}</code><br>Today's model: <i>CMU IT updates this</i></div>`).join('');
+
+// tooltip
+const tip = $('tip');
+document.addEventListener('mousemove', e => {
+  const t = e.target.closest('[data-tip]');
+  if (!t) { tip.style.display = 'none'; return; }
+  tip.textContent = t.getAttribute('data-tip'); tip.style.display = 'block';
+  const r = tip.getBoundingClientRect();
+  tip.style.left = Math.min(e.clientX + 14, innerWidth - r.width - 8) + 'px';
+  tip.style.top = Math.min(e.clientY + 14, innerHeight - r.height - 8) + 'px';
+});
+$('theme').onclick = () => { const r = document.documentElement; const dark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; r.dataset.theme = dark ? 'light' : 'dark'; };
+})();
+</script>
+</body>
+</html>

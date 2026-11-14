@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Creative Viz Prototypes</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f6f4ef; --surface: #fffefb; --ink: #1d1b16; --ink-2: #57544c; --muted: #8d897f;
+  --grid: #e6e2d8; --axis: #c9c4b6; --border: rgba(29,27,22,0.10);
+  --hi: #eb6834; --hi-wash: rgba(235,104,52,0.10);
+  /* model purpose: ordinal blue (heavier model = darker) */
+  --reason: #0d366b; --frontier: #3987e5; --small: #9ec5f4;
+  --reused: #3987e5; --hidden: #b9b5aa; --paper: #ffffff; --paper-edge: #b9b3a3;
+  --broken: #d03b3b; --led: #cfcabd; --coin: #e8b730; --coin-edge: #b38a12; --bulb: #f4c542;
+  --floor: #ebe6da; --floor-side: #d8d1c0; --rack-top: #5f6672; --rack-l: #3a404a; --rack-r: #2b3038;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #121210; --surface: #1c1b19; --ink: #f0eee8; --ink-2: #c6c2b6; --muted: #8d897f;
+    --grid: #2e2d2a; --axis: #45433e; --border: rgba(255,255,255,0.10);
+    --hi: #e2672f; --hi-wash: rgba(226,103,47,0.14);
+    --reason: #b7d3f6; --frontier: #3987e5; --small: #1c5cab;
+    --paper: #e9e6dd; --paper-edge: #8d897f; --hidden: #5d5a53; --led: #45433e;
+    --floor: #2a2926; --floor-side: #22211f;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #121210; --surface: #1c1b19; --ink: #f0eee8; --ink-2: #c6c2b6; --muted: #8d897f;
+  --grid: #2e2d2a; --axis: #45433e; --border: rgba(255,255,255,0.10);
+  --hi: #e2672f; --hi-wash: rgba(226,103,47,0.14);
+  --reason: #b7d3f6; --frontier: #3987e5; --small: #1c5cab;
+  --paper: #e9e6dd; --paper-edge: #8d897f; --hidden: #5d5a53; --led: #45433e;
+  --floor: #2a2926; --floor-side: #22211f;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+@media (max-width: 700px) { .wrap { padding: 0 16px; } }
+nav { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--page) 92%, transparent); backdrop-filter: blur(6px); border-bottom: 1px solid var(--border); }
+nav .wrap { display: flex; gap: 6px; align-items: center; padding-top: 10px; padding-bottom: 10px; overflow-x: auto; }
+nav a { text-decoration: none; color: var(--ink-2); font-size: 13px; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); white-space: nowrap; }
+nav a:hover { color: var(--ink); border-color: var(--axis); }
+nav .sp { flex: 1; }
+nav button { font: inherit; font-size: 12px; color: var(--ink-2); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+.intro { padding: 48px 0 24px; }
+.kicker { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 650; }
+.intro h1 { font-size: 40px; line-height: 1.12; margin: 8px 0 12px; max-width: 860px; font-weight: 700; text-wrap: balance; }
+.intro p { color: var(--ink-2); max-width: 760px; margin: 0; }
+section.proto { padding: 56px 0 24px; border-top: 1px solid var(--border); }
+.tag { display: inline-block; font-size: 12px; font-weight: 650; color: var(--hi); letter-spacing: .04em; text-transform: uppercase; }
+h2 { font-size: 30px; line-height: 1.18; margin: 6px 0 8px; max-width: 900px; font-weight: 700; text-wrap: balance; }
+.lede { color: var(--ink-2); max-width: 780px; margin: 0 0 22px; font-size: 16.5px; }
+.key { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 13px; color: var(--ink-2); margin: 0 0 18px; }
+.key span { display: inline-flex; align-items: center; gap: 8px; }
+.trade { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; }
+.trade div { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; color: var(--ink-2); }
+.trade b { color: var(--ink); }
+.src { font-size: 12px; color: var(--muted); margin-top: 10px; max-width: 900px; }
+svg text { font-family: inherit; }
+
+/* A rooms */
+.rooms { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 960px) { .rooms { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 620px) { .rooms { grid-template-columns: 1fr; } }
+.room { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 14px 16px 16px; }
+.room.out { border-color: color-mix(in srgb, var(--hi) 50%, transparent); background: linear-gradient(var(--hi-wash), transparent 60%), var(--surface); }
+.room h3 { margin: 0; font-size: 16px; }
+.room .who { font-size: 12px; color: var(--muted); }
+.room svg { display: block; width: 100%; height: auto; }
+.room .facts { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; font-size: 13px; color: var(--ink-2); margin-top: 6px; }
+.room .facts b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.leds { display: grid; grid-template-columns: repeat(20, 1fr); gap: 3px; margin-top: 10px; }
+.leds i { aspect-ratio: 1; border-radius: 50%; background: var(--led); }
+.leds i.r { background: var(--broken); box-shadow: 0 0 6px var(--broken); animation: blink 1.6s infinite; }
+@keyframes blink { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .leds i.r { animation: none; } }
+.ledcap { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+/* B units */
+.units { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 28px; align-items: start; }
+@media (max-width: 900px) { .units { grid-template-columns: 1fr; } }
+.toggle { display: inline-flex; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 4px; gap: 4px; margin-bottom: 14px; }
+.toggle button { font: inherit; font-size: 14px; border: 0; background: transparent; color: var(--ink-2); padding: 7px 16px; border-radius: 999px; cursor: pointer; }
+.toggle button.on { background: var(--ink); color: var(--page); }
+#grid svg { width: 100%; max-width: 440px; height: auto; display: block; }
+#grid .cell { transition: transform .7s cubic-bezier(.6,0,.2,1); }
+#grid .cell * { transition: fill .5s, opacity .4s; }
+.ucount { display: grid; gap: 12px; }
+.ucount div { display: grid; grid-template-columns: 18px 1fr auto; gap: 10px; align-items: baseline; font-size: 15px; }
+.ucount i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; transform: translateY(2px); }
+.ucount b { font-size: 28px; font-variant-numeric: tabular-nums; }
+.ucount small { display: block; color: var(--muted); font-size: 12.5px; }
+.ustate { font-size: 19px; font-weight: 650; margin: 0 0 14px; min-height: 2.6em; }
+.coins { margin-top: 34px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; }
+.coins h3 { margin: 0 0 4px; font-size: 18px; }
+.coins svg { width: 100%; height: auto; display: block; }
+
+/* C builder */
+.builder { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 24px; }
+@media (max-width: 900px) { .builder { grid-template-columns: 1fr; } }
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.presets button { font: inherit; font-size: 12.5px; border: 1px solid var(--border); background: var(--page); color: var(--ink); border-radius: 999px; padding: 5px 11px; cursor: pointer; }
+.presets button:hover { border-color: var(--axis); }
+.ctl { margin-bottom: 16px; }
+.ctl label { display: flex; justify-content: space-between; font-size: 13.5px; color: var(--ink-2); margin-bottom: 4px; }
+.ctl label b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.ctl input[type=range] { width: 100%; accent-color: var(--frontier); }
+.ctl select { width: 100%; font: inherit; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--page); color: var(--ink); }
+.verdict { font-size: 26px; font-weight: 700; line-height: 1.2; margin: 0 0 4px; }
+.verdict.ok { color: #1d8a3a; } .verdict.meh { color: #b07a00; } .verdict.bad { color: var(--broken); }
+.vsub { color: var(--ink-2); font-size: 14px; margin-bottom: 14px; }
+.meters { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
+@media (max-width: 620px) { .meters { grid-template-columns: 1fr; } }
+.meter { background: var(--page); border-radius: 12px; padding: 12px 14px; }
+.meter .l { font-size: 12.5px; color: var(--ink-2); }
+.meter .v { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.meter .c { font-size: 12px; color: var(--muted); }
+.mbar { height: 8px; border-radius: 4px; background: var(--grid); position: relative; margin-top: 8px; }
+.mbar span { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; transition: width .3s; }
+.mbar em { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--ink); }
+#pages svg { width: 100%; height: auto; display: block; }
+
+/* D scrolly */
+.scrolly { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 32px; }
+@media (max-width: 860px) { .scrolly { grid-template-columns: 1fr; } .stage { top: 52px !important; } }
+.stage { position: sticky; top: 72px; height: min(78vh, 560px); background: var(--surface); border: 1px solid var(--border); border-radius: 16px; display: flex; align-items: center; justify-content: center; }
+.stage svg { width: 100%; height: 100%; }
+.steps { padding: 20vh 0 30vh; }
+.stepx { min-height: 62vh; display: flex; align-items: center; }
+.stepx div { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 20px; font-size: 17px; opacity: .35; transition: opacity .3s; box-shadow: 0 6px 22px rgba(0,0,0,.05); }
+.stepx.on div { opacity: 1; }
+.stepx b { font-weight: 700; }
+#stage .fx { transition: opacity .6s, transform .9s cubic-bezier(.6,0,.2,1); }
+@media (max-width: 860px) { .stage { height: 46vh; } .stepx { min-height: 70vh; } .stepx div { background: color-mix(in srgb, var(--surface) 94%, transparent); } }
+
+/* E equivalents */
+.eq { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 900px) { .eq { grid-template-columns: 1fr; } }
+.eqc { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; }
+.eqc .big { font-size: 40px; font-weight: 750; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.eqc .what { font-size: 15px; color: var(--ink-2); margin: 4px 0 12px; }
+.eqc .rng { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+.icons { display: flex; flex-wrap: wrap; gap: 4px; }
+.icons svg { width: 22px; height: 22px; }
+.bulbs { display: grid; gap: 10px; }
+.bulbs .row { display: grid; grid-template-columns: 110px 1fr; align-items: center; gap: 10px; font-size: 13.5px; }
+.bulbs .bar { height: 18px; border-radius: 0 9px 9px 0; background: linear-gradient(90deg, var(--bulb), color-mix(in srgb, var(--bulb) 55%, transparent)); display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 12px; color: #3a2e00; font-weight: 650; min-width: 52px; }
+footer { padding: 40px 0 60px; color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--border); margin-top: 40px; }
+#tip { position: fixed; pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; font-size: 12.5px; box-shadow: 0 4px 16px rgba(0,0,0,.14); display: none; max-width: 260px; z-index: 30; }
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a href="#a">A · Server rooms</a><a href="#b">B · 100 requests</a><a href="#c">C · Build a request</a><a href="#d">D · A prompt's journey</a><a href="#e">E · Everyday terms</a>
+  <span class="sp"></span><button id="theme">Light / dark</button>
+</div></nav>
+
+<div class="wrap">
+  <header class="intro">
+    <div class="kicker">IronViz prototypes · P14 · data as of Oct 2026 · synthetic data, energy estimated</div>
+    <h1>Five ways to make CMU's AI habits visible</h1>
+    <p>The same findings drawn five ways. Each one shows a single idea at a time. Compare them and pick what to keep; nothing here is final. All numbers come from the pipeline (<code>dashboard/data.js</code>), and only the local-good results are used.</p>
+  </header>
+
+  <!-- ===================== A ===================== -->
+  <section class="proto" id="a">
+    <span class="tag">Prototype A · Illustration</span>
+    <h2>Six server rooms: Dev's and Sandbox's run bigger, read longer prompts, and blink red more often</h2>
+    <p class="lede">Each group is drawn as a small server room. The racks show monthly energy, the paper pile shows how long a typical prompt is, and the status lights show broken requests.</p>
+    <div class="key" id="akey"></div>
+    <div class="rooms" id="rooms"></div>
+    <div class="trade"><div><b>Prints to PDF:</b> yes</div><div><b>Strength:</b> the gap between the groups is visible without reading a number</div><div><b>Weakness:</b> the blocks are rounded to whole units, so it isn't precise</div></div>
+  </section>
+
+  <!-- ===================== B ===================== -->
+  <section class="proto" id="b">
+    <span class="tag">Prototype B · Unit chart</span>
+    <h2>Take 100 OpenAI requests. The 10 that went to the reasoning model ran up 65 of every 100 dollars.</h2>
+    <p class="lede">Each square is 1 of 100. Switch between requests, cost and energy and watch the same 100 squares change hands.</p>
+    <div class="units">
+      <div>
+        <div class="toggle" role="tablist" id="utoggle">
+          <button class="on" data-s="requests">Requests</button><button data-s="cost">Cost</button><button data-s="energy">Energy</button>
+        </div>
+        <div id="grid"></div>
+      </div>
+      <div>
+        <p class="ustate" id="ustate"></p>
+        <div class="ucount" id="ucount"></div>
+      </div>
+    </div>
+    <div class="coins">
+      <h3>What one request costs, in coins</h3>
+      <div class="src" style="margin:0 0 8px">One coin = the average cost of one frontier request (about <span id="coinval"></span>).</div>
+      <div id="coinsvg"></div>
+    </div>
+    <div class="trade"><div><b>Prints to PDF:</b> yes, as three small panels side by side</div><div><b>Strength:</b> "1 in 10 → 2 in 3" is easy to see and remember</div><div><b>Weakness:</b> OpenAI groups only; one idea per picture</div></div>
+  </section>
+
+  <!-- ===================== C ===================== -->
+  <section class="proto" id="c">
+    <span class="tag">Prototype C · Interactive toy</span>
+    <h2>Build a request, and see what your habits cost</h2>
+    <p class="lede">Pick a model, then set how long the prompt is, how much of it is reused, and how long the answer is. The verdict compares your request with a typical request on the same model from CMU's efficient groups.</p>
+    <div class="builder">
+      <div class="panel">
+        <div class="presets" id="presets"></div>
+        <div class="ctl"><label>Model</label><select id="cModel"></select></div>
+        <div class="ctl"><label>Prompt length <b id="vPrompt"></b></label><input type="range" id="cPrompt" min="0" max="1000" step="1"></div>
+        <div class="ctl"><label>Prompt text reused (cached) <b id="vCache"></b></label><input type="range" id="cCache" min="0" max="60" step="1"></div>
+        <div class="ctl"><label>Answer length you read <b id="vOut"></b></label><input type="range" id="cOut" min="100" max="4000" step="50"></div>
+        <div class="src" id="cNote"></div>
+      </div>
+      <div class="panel">
+        <p class="verdict" id="verdict"></p>
+        <div class="vsub" id="vsub"></div>
+        <div class="meters" id="meters"></div>
+        <div id="pages"></div>
+      </div>
+    </div>
+    <div class="trade"><div><b>Prints to PDF:</b> partly; it would print as 3 preset snapshots</div><div><b>Strength:</b> teaches habits that work with any model; well suited to students</div><div><b>Weakness:</b> it's a model of one request, not a picture of what campus actually did</div></div>
+  </section>
+
+  <!-- ===================== D ===================== -->
+  <section class="proto" id="d">
+    <span class="tag">Prototype D · Scrollytelling</span>
+    <h2>The journey of one prompt</h2>
+    <p class="lede">Scroll down. One page of text ≈ 500 tokens (about 375 words).</p>
+    <div class="scrolly">
+      <div class="stage"><svg id="stage" viewBox="0 0 560 460" role="img" aria-label="Illustrated journey of an AI request"></svg></div>
+      <div class="steps" id="steps"></div>
+    </div>
+    <div class="trade"><div><b>Prints to PDF:</b> no; it would print as a comic strip of 4–6 frames</div><div><b>Strength:</b> explains tokens, caching and hidden reasoning in plain language</div><div><b>Weakness:</b> the most build time; a typical request, not totals</div></div>
+  </section>
+
+  <!-- ===================== E ===================== -->
+  <section class="proto" id="e">
+    <span class="tag">Prototype E · Everyday comparisons</span>
+    <h2>A month of CMU's AI use takes about as much energy as charging a phone 20,000 times</h2>
+    <p class="lede">Kilowatt-hours are abstract. Phone charges and lightbulb minutes aren't. Every comparison keeps its estimate range.</p>
+    <div class="eq" id="eq"></div>
+    <div class="src" id="esrc"></div>
+    <div class="trade"><div><b>Prints to PDF:</b> yes</div><div><b>Strength:</b> instantly relatable, especially for a non-technical reader</div><div><b>Weakness:</b> each comparison adds an assumption (phone battery, bulb wattage)</div></div>
+  </section>
+
+  <footer>Synthetic telemetry from the CMU Student IronViz 2026 competition (202,650 requests, Oct 1–30 2026). Costs use public list prices; the o1-preview and gemini-1.5-pro prices come from third-party sources and are not verified. Energy figures are estimates from Jegham et al. 2025 (arXiv:2505.09598) and Elsworth et al. 2025 (arXiv:2508.15734); Gemini and o1-preview use stand-in benchmarks. Phone charge = 0.019 kWh (US EPA Greenhouse Gas Equivalencies Calculator). Generated Nov 14 2026.</footer>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script src="../dashboard/data.js"></script>
+<script>
+(() => {
+const D = window.DASH;
+const $ = id => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs, parent, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; if (parent) parent.appendChild(e); return e; };
+const n0 = v => Math.round(v).toLocaleString();
+const TOK_PER_PAGE = 500;
+const ORDER = ['org-engineering-dev', 'prj-ai-sandbox-testing', 'org-prod-core', 'prj-ai-enterprise-prod', 'org-marketing-ai', 'prj-ai-r-and-d'];
+const cards = ORDER.map(t => D.cards.find(c => c.tenant === t));
+const PROV = { openai: 'OpenAI', gemini: 'Gemini' };
+const tip = $('tip');
+document.addEventListener('mousemove', e => {
+  const t = e.target.closest && e.target.closest('[data-tip]');
+  if (!t) { tip.style.display = 'none'; return; }
+  tip.textContent = t.getAttribute('data-tip'); tip.style.display = 'block';
+  const r = tip.getBoundingClientRect();
+  tip.style.left = Math.min(e.clientX + 14, innerWidth - r.width - 8) + 'px';
+  tip.style.top = Math.min(e.clientY + 14, innerHeight - r.height - 8) + 'px';
+});
+$('theme').onclick = () => { const r = document.documentElement; const dark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; r.dataset.theme = dark ? 'light' : 'dark'; };
+
+// ============ A: isometric server rooms ============
+const KWH_PER_BLOCK = 5;
+$('akey').innerHTML = `
+  <span><svg width="18" height="18" viewBox="0 0 18 18"><path d="M9 2l7 4-7 4-7-4z" fill="var(--rack-top)"/><path d="M2 6l7 4v6l-7-4z" fill="var(--rack-l)"/><path d="M16 6l-7 4v6l7-4z" fill="var(--rack-r)"/></svg>1 server block = ${KWH_PER_BLOCK} kWh a month (estimate)</span>
+  <span><svg width="18" height="14" viewBox="0 0 18 14"><rect x="1" y="6" width="16" height="3" fill="var(--paper)" stroke="var(--paper-edge)"/><rect x="1" y="2" width="16" height="3" fill="var(--reused)"/></svg>1 sheet = 500 prompt tokens; blue = reused (cached)</span>
+  <span><i style="width:10px;height:10px;border-radius:50%;background:var(--broken);display:inline-block"></i>1 red light = 1 broken request (HTTP 400) in 100</span>`;
+const kwhOf = t => D.opportunity[t] ? D.opportunity[t].actual_kwh : null;
+const roomsHost = $('rooms');
+cards.forEach(c => {
+  const card = document.createElement('div');
+  card.className = 'room' + (c.outlier ? ' out' : '');
+  const kwh = c.wh_per * c.requests / 1000;
+  const blocks = Math.max(1, Math.round(kwh / KWH_PER_BLOCK));
+  const sheets = Math.max(1, Math.round(c.prompt_median / TOK_PER_PAGE));
+  const reusedSheets = Math.round(sheets * c.cache_pct / 100);
+  const red = Math.round(c.r400_pct);
+  card.innerHTML = `<h3>${c.persona}</h3><div class="who">${PROV[c.provider]} · ${n0(c.requests)} successful requests</div>`;
+  const svg = el('svg', { viewBox: '0 0 340 215', role: 'img', 'aria-label': `${c.persona}: ${blocks} server blocks (${Math.round(kwh)} kWh), prompt ${sheets} sheets with ${reusedSheets} reused, ${red} broken requests in 100` }, card);
+  const s = 15, ox = 150, oy = 78;
+  const P = (x, y, z) => [ox + (x - y) * 0.866 * s, oy + (x + y) * 0.5 * s - z * s];
+  const poly = (pts, fill, extra = {}) => el('path', Object.assign({ d: 'M' + pts.map(p => P(...p).map(v => v.toFixed(1)).join(',')).join('L') + 'Z', fill }, extra), svg);
+  const box = (x, y, z, w, d, h, ct, cl, cr, extra) => {
+    poly([[x, y + d, z], [x + w, y + d, z], [x + w, y + d, z + h], [x, y + d, z + h]], cl, extra);
+    poly([[x + w, y, z], [x + w, y + d, z], [x + w, y + d, z + h], [x + w, y, z + h]], cr, extra);
+    poly([[x, y, z + h], [x + w, y, z + h], [x + w, y + d, z + h], [x, y + d, z + h]], ct, extra);
+  };
+  // floor slab
+  box(0, 0, -0.35, 9, 7, 0.35, 'var(--floor)', 'var(--floor-side)', 'var(--floor-side)');
+  // racks along the back, 4 blocks max per rack
+  const perRack = 4, racks = Math.ceil(blocks / perRack);
+  const tipR = `${c.persona}: about ${Math.round(kwh)} kWh a month (estimate) = ${blocks} blocks`;
+  for (let r = 0; r < racks; r++) {
+    const h = Math.min(perRack, blocks - r * perRack);
+    const x = 0.6 + r * 1.9;
+    for (let b = 0; b < h; b++) {
+      box(x, 0.5, b * 1.05, 1.5, 1.3, 1, 'var(--rack-top)', 'var(--rack-l)', 'var(--rack-r)', { 'data-tip': tipR });
+      // tiny status leds on the front (+y face)
+      const [lx, ly] = P(x + 0.35, 1.8, b * 1.05 + 0.5);
+      el('circle', { cx: lx, cy: ly, r: 1.6, fill: '#7ee08a' }, svg);
+      const [lx2, ly2] = P(x + 0.8, 1.8, b * 1.05 + 0.5);
+      el('circle', { cx: lx2, cy: ly2, r: 1.6, fill: '#7ee08a', opacity: .6 }, svg);
+    }
+  }
+  // paper pile at the front right
+  const tipP = `Typical prompt: ${n0(c.prompt_median)} tokens = ${sheets} sheets; ${c.cache_pct.toFixed(1)}% reused from cache (${reusedSheets} sheet${reusedSheets === 1 ? '' : 's'})`;
+  for (let i = 0; i < sheets; i++) {
+    const reused = i < reusedSheets;
+    box(6.2, 4.6, i * 0.14, 2.2, 1.6, 0.1, reused ? 'var(--reused)' : 'var(--paper)', reused ? 'var(--reused)' : 'var(--paper-edge)', reused ? 'var(--reused)' : 'var(--paper-edge)', { 'data-tip': tipP });
+  }
+  const facts = document.createElement('div');
+  facts.className = 'facts';
+  facts.innerHTML = `<span>Energy a month</span><b>${Math.round(kwh)} kWh</b><span>Typical prompt</span><b>${sheets} sheets, ${c.cache_pct.toFixed(0)}% reused</b>`;
+  card.appendChild(facts);
+  const leds = document.createElement('div'); leds.className = 'leds';
+  leds.setAttribute('data-tip', `${c.r400_pct.toFixed(1)}% of requests were rejected as malformed (HTTP 400)`);
+  leds.innerHTML = Array.from({ length: 100 }, (_, i) => `<i class="${i < red ? 'r' : ''}"></i>`).join('');
+  card.appendChild(leds);
+  const cap = document.createElement('div'); cap.className = 'ledcap'; cap.textContent = `${red} of 100 requests broken`;
+  card.appendChild(cap);
+  roomsHost.appendChild(card);
+});
+
+// ============ B: 100-unit morph ============
+const PS = D.purpose_share, PP = D.per_purpose;
+const PURP = [['Reasoning', 'var(--reason)', 'o1-preview'], ['Frontier', 'var(--frontier)', 'gpt-4o'], ['Small/fast', 'var(--small)', 'gpt-4o-mini']];
+const toHundred = key => { // largest remainder so each state sums to 100
+  const raw = PURP.map(([p]) => PS[p][key]);
+  const fl = raw.map(Math.floor); let left = 100 - fl.reduce((a, b) => a + b, 0);
+  raw.map((v, i) => [v - fl[i], i]).sort((a, b) => b[0] - a[0]).forEach(([, i]) => { if (left > 0) { fl[i]++; left--; } });
+  return fl;
+};
+const STATES = { requests: toHundred('requests'), cost: toHundred('cost'), energy: toHundred('energy') };
+const gsvg = el('svg', { viewBox: '0 0 400 400', role: 'img' }, $('grid'));
+const cellsB = [];
+for (let i = 0; i < 100; i++) {
+  const g = el('g', { class: 'cell' }, gsvg);
+  const sq = el('rect', { x: 3, y: 3, width: 34, height: 34, rx: 7 }, g);           // request
+  const coin = el('circle', { cx: 20, cy: 20, r: 16, opacity: 0 }, g);              // cost
+  const dollar = el('text', { x: 20, y: 25.5, 'text-anchor': 'middle', 'font-size': 15, 'font-weight': 700, fill: '#fff', opacity: 0 }, g, '$');
+  const bulb = el('path', { d: 'M20 5a11 11 0 0 0-6.5 19.8c1.4 1 2.2 2.4 2.2 4V31h8.6v-2.2c0-1.6.8-3 2.2-4A11 11 0 0 0 20 5zM15.8 33h8.4v2.6a1.6 1.6 0 0 1-1.6 1.6h-5.2a1.6 1.6 0 0 1-1.6-1.6z', opacity: 0 }, g);
+  cellsB.push({ g, sq, coin, dollar, bulb });
+}
+const STATE_TEXT = {
+  requests: 'Out of every 100 OpenAI requests, 10 went to the reasoning model.',
+  cost: 'But out of every $100 spent, the reasoning model took about $65.',
+  energy: 'And out of every 100 units of energy, it used about 32.',
+};
+function setB(state) {
+  const counts = STATES[state];
+  let idx = 0;
+  const purposeOf = [];
+  counts.forEach((n, p) => { for (let k = 0; k < n; k++) purposeOf[idx++] = p; });
+  cellsB.forEach((c, i) => {
+    const p = purposeOf[i], col = PURP[p][1];
+    const x = (i % 10) * 40, y = Math.floor(i / 10) * 40;
+    c.g.setAttribute('transform', `translate(${x},${y})`);
+    c.g.style.transitionDelay = (i * 6) + 'ms';
+    c.g.setAttribute('data-tip', `${PURP[p][0]} model`);
+    [c.sq, c.coin, c.bulb].forEach(m => m.setAttribute('fill', col));
+    c.sq.setAttribute('opacity', state === 'requests' ? 1 : 0);
+    c.coin.setAttribute('opacity', state === 'cost' ? 1 : 0);
+    c.dollar.setAttribute('opacity', state === 'cost' ? (p === 2 ? 0 : 0.95) : 0);
+    c.dollar.setAttribute('fill', p === 2 ? '#0d366b' : '#fff');
+    c.bulb.setAttribute('opacity', state === 'energy' ? 1 : 0);
+  });
+  $('ustate').textContent = STATE_TEXT[state];
+  const unit = { requests: 'requests', cost: 'dollars', energy: 'energy units' }[state];
+  $('ucount').innerHTML = PURP.map(([p, col, m], k) => `<div><i style="background:${col}"></i><span>${p}<small>${m} · ${p === 'Reasoning' ? 'multi-step problems' : p === 'Frontier' ? 'general high-quality work' : 'routine tasks'}</small></span><b>${counts[k]}</b></div>`).join('') + `<div style="grid-template-columns:1fr"><small>of every 100 ${unit} (OpenAI groups, Oct 2026)</small></div>`;
+  document.querySelectorAll('#utoggle button').forEach(b => b.classList.toggle('on', b.dataset.s === state));
+}
+$('utoggle').onclick = e => { const b = e.target.closest('button'); if (b) { setB(b.dataset.s); autoplay = false; } };
+setB('requests');
+let autoplay = true;
+const bObs = new IntersectionObserver(es => es.forEach(en => {
+  if (en.isIntersecting && autoplay) {
+    let k = 0; const seq = ['requests', 'cost', 'energy'];
+    const tick = () => { if (!autoplay) return; k = (k + 1) % 3; setB(seq[k]); setTimeout(tick, 3200); };
+    setTimeout(tick, 2400); bObs.disconnect();
+  }
+}), { threshold: 0.4 });
+bObs.observe($('grid'));
+// coin stacks
+const coinUnit = PP.Frontier.cost;
+$('coinval').textContent = (coinUnit * 100).toFixed(1) + '¢';
+const csvg = el('svg', { viewBox: '0 0 760 236', role: 'img', 'aria-label': 'Coin stacks: reasoning about 9 coins, frontier 1 coin, small/fast a thin sliver' }, $('coinsvg'));
+PURP.forEach(([p, col, m], k) => {
+  const cx = 130 + k * 250, base = 160;
+  const coins = PP[p].cost / coinUnit;
+  const full = Math.floor(coins), frac = coins - full;
+  for (let i = 0; i < full; i++) {
+    const y = base - i * 12;
+    el('ellipse', { cx, cy: y + 4, rx: 34, ry: 10, fill: 'var(--coin-edge)' }, csvg);
+    el('ellipse', { cx, cy: y, rx: 34, ry: 10, fill: 'var(--coin)', stroke: 'var(--coin-edge)', 'stroke-width': 1, 'data-tip': `${p}: ${(PP[p].cost * 100).toFixed(1)}¢ per request` }, csvg);
+  }
+  if (full === 0) {
+    el('path', { d: `M${cx - 34},${base} A34,10 0 0 0 ${cx - 34 + 68 * Math.max(frac, 0.04)},${base + 9.5}`, fill: 'none', stroke: 'var(--coin-edge)', 'stroke-width': 4, 'stroke-linecap': 'round', 'data-tip': `${p}: ${(PP[p].cost * 100).toFixed(2)}¢ per request` }, csvg);
+  }
+  el('text', { x: cx, y: base + 34, 'text-anchor': 'middle', 'font-size': 15, 'font-weight': 650, fill: 'var(--ink)' }, csvg, `${p} · ${coins >= 1 ? coins.toFixed(0) + (coins >= 1.5 ? ' coins' : ' coin') : '1/' + Math.round(1 / coins) + ' of a coin'}`);
+  el('text', { x: cx, y: base + 52, 'text-anchor': 'middle', 'font-size': 12.5, fill: 'var(--muted)' }, csvg, `${m} · ${(PP[p].cost * 100).toFixed(PP[p].cost < 0.01 ? 2 : 1)}¢ a request`);
+});
+
+// ============ C: build a request ============
+const KIT = D.kit, EP = D.energy_params;
+const MODELS = ['o1-preview', 'gpt-4o', 'gpt-4o-mini', 'gemini-1.5-pro', 'gemini-1.5-flash'];
+$('cModel').innerHTML = MODELS.map(m => `<option value="${m}">${m} · ${KIT[m].purpose.toLowerCase()}</option>`).join('');
+const promptFromSlider = v => Math.round(Math.pow(10, 2.7 + v / 1000 * (4.5 - 2.7)) / 50) * 50; // 500 → 31,600 (log)
+const sliderFromPrompt = t => Math.round((Math.log10(t) - 2.7) / (4.5 - 2.7) * 1000);
+const visibleOut = m => KIT[m].baseline.output * (1 - KIT[m].baseline.hidden_share);
+function evalReq(m, prompt, cacheShare, outVisible) {
+  const k = KIT[m], h = k.baseline.hidden_share;
+  const hidden = h > 0 ? outVisible * h / (1 - h) : 0;
+  const out = outVisible + hidden, cac = prompt * cacheShare, unc = prompt - cac;
+  const cost = (unc * k.price_in + cac * k.price_cached + out * k.price_out) / 1e6;
+  const e = k.energy;
+  const high = e.a + e.b_in * (unc + cac * EP.cached_high) + e.b_out * out;
+  const low = EP.low_scale * (e.a + e.b_in * (unc + cac * EP.cached_low) + e.b_out * out);
+  return { cost, wh: (low + high) / 2, low, high, hidden, out };
+}
+const S = { m: 'gpt-4o', prompt: 6000, cache: 19, out: 1300 };
+const PRESETS = [
+  ['CMU efficient group · gpt-4o', () => ({ m: 'gpt-4o', prompt: KIT['gpt-4o'].baseline.prompt, cache: KIT['gpt-4o'].baseline.cache_share * 100, out: visibleOut('gpt-4o') })],
+  ['Dev habit · gpt-4o', () => ({ m: 'gpt-4o', prompt: KIT['gpt-4o'].outlier.prompt, cache: KIT['gpt-4o'].outlier.cache_share * 100, out: KIT['gpt-4o'].outlier.output })],
+  ['Sandbox habit · gemini-1.5-pro', () => ({ m: 'gemini-1.5-pro', prompt: KIT['gemini-1.5-pro'].outlier.prompt, cache: KIT['gemini-1.5-pro'].outlier.cache_share * 100, out: KIT['gemini-1.5-pro'].outlier.output })],
+  ['Reasoning model for a routine question', () => ({ m: 'o1-preview', prompt: KIT['gpt-4o'].baseline.prompt, cache: KIT['gpt-4o'].baseline.cache_share * 100, out: visibleOut('gpt-4o') })],
+];
+$('presets').innerHTML = PRESETS.map(([l], i) => `<button data-i="${i}">${l}</button>`).join('');
+$('presets').onclick = e => { const b = e.target.closest('button'); if (!b) return; Object.assign(S, PRESETS[+b.dataset.i][1]()); S.cache = Math.round(S.cache); S.out = Math.round(S.out / 50) * 50; syncC(); };
+$('cModel').onchange = e => { S.m = e.target.value; renderC(); };
+$('cPrompt').oninput = e => { S.prompt = promptFromSlider(+e.target.value); renderC(); };
+$('cCache').oninput = e => { S.cache = +e.target.value; renderC(); };
+$('cOut').oninput = e => { S.out = +e.target.value; renderC(); };
+function syncC() { $('cModel').value = S.m; $('cPrompt').value = sliderFromPrompt(S.prompt); $('cCache').value = S.cache; $('cOut').value = S.out; renderC(); }
+const fmtUsd = v => v >= 0.1 ? '$' + v.toFixed(2) : v >= 0.01 ? (v * 100).toFixed(1) + '¢' : (v * 100).toFixed(2) + '¢';
+function renderC() {
+  const k = KIT[S.m];
+  $('vPrompt').textContent = `${n0(S.prompt)} tokens · ${Math.max(1, Math.round(S.prompt / TOK_PER_PAGE))} pages`;
+  $('vCache').textContent = S.cache + '%';
+  $('vOut').textContent = `${n0(S.out)} tokens`;
+  const r = evalReq(S.m, S.prompt, S.cache / 100, S.out);
+  const b = evalReq(S.m, k.baseline.prompt, k.baseline.cache_share, visibleOut(S.m));
+  // compare against the efficient-group request of the SAME purpose on the cheapest everyday model (gpt-4o) when using reasoning
+  const ratio = r.cost / b.cost;
+  const v = $('verdict');
+  if (ratio <= 1.15) { v.className = 'verdict ok'; v.textContent = 'Efficient: like CMU\'s best groups'; }
+  else if (ratio <= 2) { v.className = 'verdict meh'; v.textContent = `Heavy: ${ratio.toFixed(1)}× a typical efficient request`; }
+  else { v.className = 'verdict bad'; v.textContent = `Wasteful: ${ratio.toFixed(1)}× a typical efficient request`; }
+  const f = evalReq('gpt-4o', S.prompt, S.cache / 100, S.out);
+  $('vsub').textContent = S.m === 'o1-preview'
+    ? `Compared with a typical ${S.m} request from CMU's efficient groups. The same request on gpt-4o (frontier) would cost ${fmtUsd(f.cost)} instead of ${fmtUsd(r.cost)}.`
+    : `Compared with a typical ${S.m} request from CMU's efficient groups (${n0(k.baseline.prompt)}-token prompt, ${Math.round(k.baseline.cache_share * 100)}% reused).`;
+  const maxCost = 0.6, maxWh = 12;
+  const phonesPer1k = r.wh / D.equivalents.phone_charge_kwh; // 1,000 requests x Wh = kWh
+  $('meters').innerHTML = `
+    <div class="meter"><div class="l">Cost per request</div><div class="v">${fmtUsd(r.cost)}</div><div class="c">efficient: ${fmtUsd(b.cost)}</div><div class="mbar"><span style="width:${Math.min(100, r.cost / maxCost * 100)}%;background:var(--frontier)"></span><em style="left:${Math.min(100, b.cost / maxCost * 100)}%"></em></div></div>
+    <div class="meter"><div class="l">Energy per request (estimate)</div><div class="v">${r.wh.toFixed(1)} Wh</div><div class="c">range ${r.low.toFixed(1)}–${r.high.toFixed(1)} · efficient: ${b.wh.toFixed(1)}</div><div class="mbar"><span style="width:${Math.min(100, r.wh / maxWh * 100)}%;background:#1baf7a"></span><em style="left:${Math.min(100, b.wh / maxWh * 100)}%"></em></div></div>
+    <div class="meter"><div class="l">1,000 requests like this</div><div class="v">${fmtUsd(r.cost * 1000)}</div><div class="c">≈ ${n0(phonesPer1k)} phone charges of energy</div></div>`;
+  $('cNote').textContent = (k.price_status !== 'verified-official' ? `Price for ${S.m} is ${k.price_status.toLowerCase().replace(/-/g, ' ')}. ` : '') + (k.energy_proxy ? `Energy for ${S.m} uses a stand-in benchmark. ` : '') + (r.hidden ? `This model also writes about ${n0(r.hidden)} hidden reasoning tokens you pay for but never see.` : '');
+  drawPages($('pages'), S.prompt, S.cache / 100, S.out, r.hidden);
+}
+function drawPages(host, prompt, cacheShare, outVis, hidden) {
+  host.innerHTML = '';
+  const svg = el('svg', { viewBox: '0 0 620 215', role: 'img', 'aria-label': 'Pages sent and received' }, host);
+  const stack = (x, n, nBlue, label, sub, kind) => {
+    const shown = Math.min(n, 30);
+    for (let i = 0; i < shown; i++) {
+      const y = 165 - i * 5;
+      const blue = i < nBlue, hid = kind === 'hidden';
+      el('rect', { x: x + (i % 2) * 1.5, y, width: 58, height: 14, rx: 2, fill: blue ? 'var(--reused)' : hid ? 'var(--hidden)' : 'var(--paper)', stroke: blue ? 'var(--reused)' : 'var(--paper-edge)', 'stroke-width': 1, 'stroke-dasharray': hid ? '3 2' : '' }, svg);
+    }
+    el('text', { x: x + 29, y: 200, 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 650, fill: 'var(--ink)' }, svg, label);
+    el('text', { x: x + 29, y: 213, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--muted)' }, svg, sub);
+  };
+  const pIn = Math.max(1, Math.round(prompt / TOK_PER_PAGE)), pBlue = Math.round(pIn * cacheShare);
+  const pOut = Math.max(1, Math.round(outVis / TOK_PER_PAGE)), pHid = Math.round(hidden / TOK_PER_PAGE);
+  stack(40, pIn, pBlue, `${pIn} pages sent`, `${pBlue} reused (blue)`, 'in');
+  el('path', { d: 'M150 140 h120 m-10 -8 l10 8 l-10 8', fill: 'none', stroke: 'var(--axis)', 'stroke-width': 2 }, svg);
+  el('text', { x: 210, y: 130, 'text-anchor': 'middle', 'font-size': 12, fill: 'var(--muted)' }, svg, 'to the model');
+  stack(320, pOut, 0, `${pOut} pages back`, 'the answer you read', 'out');
+  if (pHid) stack(450, pHid, 0, `${pHid} hidden pages`, 'reasoning you pay for', 'hidden');
+  if (prompt / TOK_PER_PAGE > 30) el('text', { x: 69, y: 12, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--muted)' }, svg, '(30+ pages shown as 30)');
+}
+syncC();
+
+// ============ D: scrollytelling journey ============
+const effPrompt = Math.round(D.majority.prompt_median_openai / TOK_PER_PAGE);
+const sbPrompt = Math.round(cards[1].prompt_median / TOK_PER_PAGE);
+const effBlue = Math.round(effPrompt * D.majority.cache_pct[1] / 100);
+const sbBlue = Math.round(sbPrompt * cards[1].cache_pct / 100);
+const fOut = Math.round(KIT['gpt-4o'].baseline.output / TOK_PER_PAGE);
+const rVis = Math.round(visibleOut('o1-preview') / TOK_PER_PAGE);
+const rHid = Math.round(KIT['o1-preview'].baseline.output * KIT['o1-preview'].baseline.hidden_share / TOK_PER_PAGE);
+const STEPS = [
+  `Every AI request starts as <b>pages of text</b>. A typical request from CMU's efficient groups sends about <b>${effPrompt} pages</b>.`,
+  `A typical Sandbox request sends about <b>${sbPrompt} pages</b>, roughly 4 times as many.`,
+  `Pages the provider has seen before can be <b>reused (cached)</b> at a discount. Efficient groups reuse about <b>${effBlue} of ${effPrompt}</b>; Sandbox reuses <b>${sbBlue || 'almost none'}${sbBlue ? ' of ' + sbPrompt : ''}</b>.`,
+  `The pages travel to a <b>data center</b>. Reading every page takes energy and money.`,
+  `Writing the answer takes much more energy per page than reading. A frontier model like gpt-4o writes about <b>${fOut} pages</b> back.`,
+  `A reasoning model also writes <b>hidden "thinking" pages</b> you never see but still pay for: about <b>${rHid} hidden</b> for every <b>${rVis}</b> you read.`,
+  `The bill: a frontier request costs about <b>${(PP.Frontier.cost * 100).toFixed(0)}¢</b>. A reasoning request costs about <b>${(PP.Reasoning.cost * 100).toFixed(0)}¢</b>, ${D.cost_ratio_reasoning_vs_frontier.toFixed(0)} times as much.`,
+  `Finally, <b>6 in every 100</b> Dev and Sandbox requests bounce back broken, vs <b>about 1 in 100</b> elsewhere. Each one is wasted time.`,
+];
+$('steps').innerHTML = STEPS.map((t, i) => `<div class="stepx" data-i="${i}"><div>${t}</div></div>`).join('');
+const st = $('stage');
+const G = id => el('g', { id, class: 'fx', opacity: 0 }, st);
+// laptop
+const lap = G('lap');
+el('rect', { x: 30, y: 344, width: 150, height: 90, rx: 8, fill: 'var(--rack-l)' }, lap);
+el('rect', { x: 38, y: 352, width: 134, height: 74, rx: 4, fill: '#cfe3fb' }, lap);
+el('path', { d: 'M18 434 h174 l-12 14 h-150z', fill: 'var(--rack-top)' }, lap);
+el('text', { x: 105, y: 393, 'text-anchor': 'middle', 'font-size': 13, fill: '#0d366b' }, lap, 'your question…');
+// stacks
+const mkStack = (id, x, n, nBlue, label) => {
+  const g = G(id);
+  for (let i = 0; i < n; i++) {
+    el('rect', { class: i < nBlue ? 'blue' : '', x: x + (i % 2) * 2, y: 286 - i * 6, width: 64, height: 18, rx: 2, fill: 'var(--paper)', stroke: 'var(--paper-edge)' }, g);
+  }
+  el('text', { x: x + 32, y: 306, 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 650, fill: 'var(--ink)' }, g, label);
+  return g;
+};
+const sEff = mkStack('sEff', 30, effPrompt, effBlue, `Efficient: ${effPrompt}`);
+const sSb = mkStack('sSb', 170, sbPrompt, sbBlue, `Sandbox: ${sbPrompt}`);
+sEff.querySelector('text').setAttribute('y', 326); sSb.querySelector('text').setAttribute('y', 326);
+// data center
+const dc = G('dc');
+for (let r = 0; r < 3; r++) for (let b = 0; b < 5; b++) {
+  el('rect', { x: 330 + r * 62, y: 110 + b * 40, width: 54, height: 34, rx: 3, fill: 'var(--rack-l)' }, dc);
+  el('circle', { cx: 342 + r * 62, cy: 127 + b * 40, r: 3, fill: '#7ee08a' }, dc);
+  el('rect', { x: 352 + r * 62, y: 124 + b * 40, width: 26, height: 5, rx: 2, fill: 'var(--rack-top)' }, dc);
+}
+el('text', { x: 423, y: 330, 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 650, fill: 'var(--ink)' }, dc, 'data center');
+el('path', { d: 'M230 200 C 270 170, 290 170, 320 190', fill: 'none', stroke: 'var(--axis)', 'stroke-width': 2, 'stroke-dasharray': '5 4' }, dc);
+el('path', { d: 'M470 60 l-14 26 h12 l-8 22 l22 -30 h-12 l10 -18z', fill: 'var(--bulb)' }, dc);
+// answers
+const ans = (id, x, nVis, nHid, label) => {
+  const g = G(id);
+  for (let i = 0; i < nVis + nHid; i++) {
+    const hid = i >= nVis;
+    el('rect', { x: x + (i % 2) * 2, y: 420 - i * 6, width: 64, height: 18, rx: 2, fill: hid ? 'var(--hidden)' : 'var(--paper)', stroke: 'var(--paper-edge)', 'stroke-dasharray': hid ? '3 2' : '' }, g);
+  }
+  el('text', { x: x + 32, y: 452, 'text-anchor': 'middle', 'font-size': 12.5, fill: 'var(--ink)' }, g, label);
+  return g;
+};
+ans('aF', 220, fOut, 0, `frontier: ${fOut} pages`);
+ans('aR', 370, rVis, rHid, `reasoning: ${rVis} + ${rHid} hidden`);
+// coins
+const coinsG = (id, x, n, label) => {
+  const g = G(id);
+  for (let i = 0; i < n; i++) { el('ellipse', { cx: x, cy: 96 - i * 7 + 4, rx: 22, ry: 7, fill: 'var(--coin-edge)' }, g); el('ellipse', { cx: x, cy: 96 - i * 7, rx: 22, ry: 7, fill: 'var(--coin)', stroke: 'var(--coin-edge)' }, g); }
+  el('text', { x, y: 122, 'text-anchor': 'middle', 'font-size': 12.5, 'font-weight': 650, fill: 'var(--ink)' }, g, label);
+  return g;
+};
+coinsG('cF', 80, 1, `frontier ${(PP.Frontier.cost * 100).toFixed(0)}¢`);
+coinsG('cR', 190, Math.round(D.cost_ratio_reasoning_vs_frontier), `reasoning ${(PP.Reasoning.cost * 100).toFixed(0)}¢`);
+// bounce
+const bo = G('bounce');
+for (let i = 0; i < 100; i++) {
+  const red = i < 6;
+  el('circle', { cx: 40 + (i % 20) * 11, cy: 120 + Math.floor(i / 20) * 11, r: 4, fill: red ? 'var(--broken)' : 'var(--led)' }, bo);
+}
+el('text', { x: 140, y: 192, 'text-anchor': 'middle', 'font-size': 12.5, fill: 'var(--ink)' }, bo, 'Dev & Sandbox: 6 broken in 100');
+el('path', { d: 'M320 230 C 290 250, 260 220, 250 175', fill: 'none', stroke: 'var(--broken)', 'stroke-width': 2.5, 'marker-end': '' }, bo);
+const VIS = { // step index -> visible groups
+  lap: [0, 1, 2, 3, 4, 5, 6, 7], sEff: [0, 1, 2, 3], sSb: [1, 2, 3], dc: [3, 4, 5, 6, 7], aF: [4, 5, 6], aR: [5, 6], cF: [6], cR: [6], bounce: [7],
+};
+function setStep(i) {
+  for (const id in VIS) { const g = $(id); g.setAttribute('opacity', VIS[id].includes(i) ? 1 : 0); }
+  // move the page stacks toward the data center at step 3
+  const moved = i === 3 ? 'translate(150px,-40px) scale(.85)' : 'none';
+  $('sEff').style.transform = moved; $('sSb').style.transform = moved;
+  $('lap').style.transform = i >= 6 ? 'translate(0,0)' : 'none';
+  // reused pages turn blue from step 2
+  st.querySelectorAll('rect.blue').forEach(r => r.setAttribute('fill', i >= 2 ? 'var(--reused)' : 'var(--paper)'));
+  if (i >= 6) { $('sEff').setAttribute('opacity', 0); $('sSb').setAttribute('opacity', 0); }
+  if (i === 7) { $('aF').setAttribute('opacity', 0); }
+  document.querySelectorAll('.stepx').forEach(s => s.classList.toggle('on', +s.dataset.i === i));
+}
+setStep(0);
+const dm = location.hash.match(/dstep=(\d)/); if (dm) { setStep(+dm[1]); document.querySelector(".scrolly").scrollIntoView(); }
+const dObs = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) setStep(+en.target.dataset.i); }), { rootMargin: '-45% 0px -45% 0px' });
+if (!dm) document.querySelectorAll('.stepx').forEach(s => dObs.observe(s));
+
+// ============ E: everyday equivalents ============
+const EQ = D.equivalents, H = D.headline, CL = D.campus_local;
+const phones = kwh => kwh / EQ.phone_charge_kwh;
+const phoneIcon = (fill) => `<svg viewBox="0 0 22 22" aria-hidden="true"><rect x="6" y="1.5" width="10" height="19" rx="2.2" fill="${fill}"/><rect x="7.6" y="4" width="6.8" height="12.5" rx=".8" fill="var(--surface)" opacity=".85"/><circle cx="11" cy="18.4" r=".9" fill="var(--surface)"/></svg>`;
+const nPh = Math.round(phones(H.kwh[1]) / 1000);
+const nSave = phones(-CL.d_kwh);
+const bulbMin = wh => wh / EQ.led_bulb_w * 60;
+$('eq').innerHTML = `
+  <div class="eqc"><div class="big">${n0(Math.round(phones(H.kwh[1]) / 100) * 100)}</div><div class="what">phone charges' worth of energy for one month of campus AI (central estimate)</div>
+    <div class="icons" data-tip="Each phone = 1,000 charges">${Array.from({ length: nPh }, () => phoneIcon('var(--frontier)')).join('')}</div>
+    <div class="rng">Range ${n0(Math.round(phones(H.kwh[0]) / 100) * 100)}–${n0(Math.round(phones(H.kwh[2]) / 100) * 100)} charges (${Math.round(H.kwh[0])}–${Math.round(H.kwh[2])} kWh). Each icon = 1,000 charges.</div></div>
+  <div class="eqc"><div class="what" style="margin-top:0">One request keeps a 10 W LED bulb lit for…</div>
+    <div class="bulbs">${PURP.map(([p, , m]) => { const mins = bulbMin(PP[p].wh); return `<div class="row"><span><b>${p}</b><br><span style="color:var(--muted);font-size:12px">${m}</span></span><span class="bar" style="width:${Math.max(18, mins / bulbMin(PP.Reasoning.wh) * 100)}%">${Math.round(mins)} min</span></div>`; }).join('')}</div>
+    <div class="rng">Central estimates per successful request: ${PURP.map(([p]) => PP[p].wh.toFixed(1) + ' Wh').join(', ')}.</div></div>
+  <div class="eqc"><div class="big">${n0(Math.round(nSave / 10) * 10)}</div><div class="what">phone charges saved every month if Dev and Sandbox matched CMU's efficient groups</div>
+    <div class="icons">${Array.from({ length: Math.round(nSave / 100) }, () => phoneIcon('#1baf7a')).join('')}</div>
+    <div class="rng">Range ${n0(Math.round(phones(-CL.d_kwh_low) / 10) * 10)}–${n0(Math.round(phones(-CL.d_kwh_high) / 10) * 10)} charges (${Math.round(-CL.d_kwh_low)}–${Math.round(-CL.d_kwh_high)} kWh). Each icon = 100 charges. Local-good habits only.</div></div>`;
+$('esrc').textContent = `Phone charge = ${EQ.phone_charge_kwh} kWh (${EQ.phone_source}). Bulb: ${EQ.led_note}. The comparisons convert the same energy estimates; they add no new measurements.`;
+const solo = location.hash.match(/solo=([a-e])/); if (solo) { document.querySelectorAll("section.proto, header.intro").forEach(s => { if (s.id !== solo[1]) s.style.display = "none"; }); }
+})();
+</script>
+</body>
+</html>
