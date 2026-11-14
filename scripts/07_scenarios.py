@@ -1,20 +1,22 @@
 """Step 4 / D16: what-if scenarios -> how much cost and energy each lever could save, per persona.
 
-LOCAL GOOD (outliers only: Engineering/Dev, Sandbox) - match what CMU's own best tenants already do:
-  L1 cache     raise token-weighted cache share to the best baseline tenant's share
-  L2 prompt    shrink prompts (per model) to the best baseline tenant's median prompt size
+LOCAL GOOD (outliers only: Engineering/Dev, Sandbox) - "what CMU's other teams already do" (D24):
+targets = AVERAGE of the baseline tenants on the SAME PROVIDER (was best-of-4 before D24).
+  L1 cache     raise token-weighted cache share to the same-provider baseline average
+  L2 prompt    shrink prompts (per model) to the average baseline median prompt size for that model
   L3 model mix move excess frontier-model calls (gpt-4o / gemini-1.5-pro) to the small model
-               (gpt-4o-mini / gemini-1.5-flash) until the frontier share matches the best baseline tenant;
+               (gpt-4o-mini / gemini-1.5-flash) until the frontier share matches the same-provider baseline average;
                the calls moved are the ones with the smallest output (proxy for routine tasks)
-  L4 errors    cut the 400 rate to the best baseline tenant's rate (reported as failed calls avoided; failed
+  L4 errors    cut the 400 rate to the same-provider baseline average (reported as failed calls avoided; failed
                calls cost $0 / 0 Wh in this model, see B0b X12)
   L_all        L1 + L2 + L3
-GLOBAL GOOD (all tenants) - provider best practices, thresholds in config/scenario_params.csv (ASSUMPTIONS):
-  G1 cache     token-weighted cache share -> global_cache_share_target
-  G2 reasoning route global_reasoning_route_share of o1-preview calls to gpt-4o (hidden reasoning tokens dropped)
-  G3 output cap  cap visible output at a percentile of the baseline's output for that model
-  G_all        G1 + G2 + G3
-LG_all         L_all then G_all (outliers); equals G_all for baseline tenants
+GLOBAL GOOD (all tenants) - provider guidance (cited in config/guidance_sources.csv) is qualitative, so there are
+NO targets (D23). Each practice is sized PER UNIT of change (config/scenario_params.csv):
+  G1 cache step   +10 points of token-weighted cache share for every tenant
+  G2 route step   10% of each tenant's o1-preview calls answered by gpt-4o (hidden reasoning tokens dropped)
+  Route ceiling   share of o1-preview calls whose answer is no longer than the tenant's median gpt-4o answer
+                  (a data ceiling, never a target)
+Removed in D23: the 50% cache target, the 50% reasoning reroute, the p75 output cap, and the G_all / LG_all totals.
 
 Cost and energy use the same formulas and config files as 03_cost.py and 06_carbon.py.
 Data is synthetic; energy is an ESTIMATE; some prices are unverified (B0b).
@@ -77,29 +79,35 @@ def totals(s):
     return out_df
 
 
-# ---- local-good targets (best observed value among the 4 baseline tenants) ----
+# ---- local-good targets = "what CMU's other teams already do" (D24/P14) ----
+# AVERAGE of the baseline tenants on the SAME PROVIDER (OpenAI: prod-core + marketing; Gemini: enterprise-prod + r-and-d).
+# Replaces the earlier best-of-4 targets: the four are statistically indistinguishable (script 04), so "best" was
+# a composite of whichever tenant happened to be highest per metric, and the cache target crossed providers.
 b = s0[s0.tenant_id.isin(BASE)]
+PROVIDER_OF = s0.groupby("tenant_id").provider.first()
+BASE_BY_PV = {pv: [t for t in BASE if PROVIDER_OF[t] == pv] for pv in FRONTIER}
 cache_share = s0.groupby("tenant_id").apply(lambda d: d.cached_input_tokens.sum() / d.input_tokens.sum())
-LOCAL_CACHE = cache_share[BASE].max()
+LOCAL_CACHE = {pv: cache_share[ts].mean() for pv, ts in BASE_BY_PV.items()}
 best_median = (b.groupby(["provider", "model", "tenant_id"]).input_tokens.median()
-                .groupby(["provider", "model"]).min())
+                .groupby(["provider", "model"]).mean())  # name kept for continuity; now the AVERAGE of baseline medians
 frontier_share = s0.groupby(["provider", "tenant_id"]).apply(lambda d: (d.model == FRONTIER[d.name[0]]).mean())
-LOCAL_FRONTIER = {pv: frontier_share[pv][[t for t in BASE if t in frontier_share[pv].index]].min() for pv in FRONTIER}
+LOCAL_FRONTIER = {pv: frontier_share[pv][ts].mean() for pv, ts in BASE_BY_PV.items()}
 pct400 = raw.groupby("tenant_id").apply(lambda d: (d.status_code == 400).mean())
-LOCAL_400 = pct400[BASE].min()
+LOCAL_400 = {pv: pct400[ts].mean() for pv, ts in BASE_BY_PV.items()}
 calls_all = raw.groupby("tenant_id").size()
 visible = lambda d: d.output_tokens - d.reasoning_tokens
-OUT_CAP = (b.assign(v=visible(b)).groupby("model").v.quantile(float(sp["global_output_cap_percentile"])))
 
 
 # ---- scenario transforms (each returns a modified copy) ----
-def raise_cache(s, tenants, target):
+def raise_cache(s, tenants, target=None, plus=None):
+    """Raise a tenant's token-weighted cache share to its provider's target, or by `plus` (e.g. 0.10 = +10 points)."""
     s = s.copy()
     for t in tenants:
         m = s.tenant_id == t
         sh = s.loc[m, "cached_input_tokens"].sum() / s.loc[m, "input_tokens"].sum()
-        if sh < target:
-            f = (target - sh) / (1 - sh)  # same fraction of each call's uncached input becomes cached
+        tgt = min(1.0, sh + plus) if plus is not None else target[PROVIDER_OF[t]]
+        if sh < tgt:
+            f = (tgt - sh) / (1 - sh)  # same fraction of each call's uncached input becomes cached
             s.loc[m, "cached_input_tokens"] += (s.loc[m, "input_tokens"] - s.loc[m, "cached_input_tokens"]) * f
     return s
 
@@ -143,31 +151,30 @@ def route_reasoning(s, share):
     return s
 
 
-def cap_output(s):
-    s = s.copy()
-    cap = s.model.map(OUT_CAP)
-    s["output_tokens"] = s.reasoning_tokens + np.minimum(visible(s), cap)
-    return s
-
-
 ALL = list(s0.tenant_id.unique())
-G_CACHE = float(sp["global_cache_share_target"])
-G_ROUTE = float(sp["global_reasoning_route_share"])
+# Global good (D23): NO invented targets. Provider guidance is qualitative (config/guidance_sources.csv), so each
+# practice is sized PER UNIT of change. The reader scales it; we never claim how far CMU "should" go.
+G_CACHE_STEP = float(sp["global_cache_step_points"])      # +10 points of cache share
+G_ROUTE_STEP = float(sp["global_reasoning_route_step"])   # 10% of reasoning calls answered by gpt-4o instead
 L_all = lambda s: fix_model_mix(trim_prompts(raise_cache(s, OUTLIERS, LOCAL_CACHE), OUTLIERS), OUTLIERS)
-G_all = lambda s: cap_output(route_reasoning(raise_cache(s, ALL, G_CACHE), G_ROUTE))
 
 SCEN = [
     ("actual", "Actual (Oct 2026)", "actual", lambda s: s),
-    ("L1_cache", f"Cache like CMU's best tenant ({LOCAL_CACHE:.1%})", "local good", lambda s: raise_cache(s, OUTLIERS, LOCAL_CACHE)),
-    ("L2_prompt", "Prompt size like CMU's best tenant", "local good", lambda s: trim_prompts(s, OUTLIERS)),
-    ("L3_model_mix", "Frontier-model share like CMU's best tenant", "local good", lambda s: fix_model_mix(s, OUTLIERS)),
-    ("L_all", "All local-good levers", "local good", L_all),
-    ("G1_cache", f"Cache share {G_CACHE:.0%} (global best practice)", "global good", lambda s: raise_cache(s, ALL, G_CACHE)),
-    ("G2_route_reasoning", f"Route {G_ROUTE:.0%} of o1-preview calls to gpt-4o", "global good", lambda s: route_reasoning(s, G_ROUTE)),
-    ("G3_output_cap", f"Cap visible output at baseline p{float(sp['global_output_cap_percentile'])*100:.0f}", "global good", cap_output),
-    ("G_all", "All global-good levers", "global good", G_all),
-    ("LG_all", "Local good + global good", "combined", lambda s: G_all(L_all(s))),
+    ("L1_cache", "Reuse prompt text like CMU's other teams (same-provider average)", "local good", lambda s: raise_cache(s, OUTLIERS, LOCAL_CACHE)),
+    ("L2_prompt", "Prompt size like CMU's other teams", "local good", lambda s: trim_prompts(s, OUTLIERS)),
+    ("L3_model_mix", "Frontier-model share like CMU's other teams", "local good", lambda s: fix_model_mix(s, OUTLIERS)),
+    ("L_all", "All three: match what CMU's other teams already do", "local good", L_all),
+    ("G1_cache_step", f"Per unit: +{G_CACHE_STEP*100:.0f} points of reused prompt text, every team", "global good (per unit)",
+     lambda s: raise_cache(s, ALL, plus=G_CACHE_STEP)),
+    ("G2_route_step", f"Per unit: {G_ROUTE_STEP:.0%} of reasoning requests answered by gpt-4o instead", "global good (per unit)",
+     lambda s: route_reasoning(s, G_ROUTE_STEP)),
 ]
+
+# Data ceiling for routing (shown as "up to", never as a target): reasoning requests whose visible answer is no
+# longer than the same tenant's median gpt-4o answer. Answer length is not task difficulty.
+_o1 = s0[s0.model == REASONING].assign(v=lambda d: visible(d))
+_g4med = s0[s0.model == REASONING_TO].assign(v=lambda d: visible(d)).groupby("tenant_id").v.median()
+ROUTE_CEILING = (_o1.v <= _o1.tenant_id.map(_g4med)).mean()
 
 rows = []
 for sid, label, grp, fn in SCEN:
@@ -186,8 +193,8 @@ labels["ALL_CAMPUS"] = "All campus"
 res.insert(1, "persona_label", res.tenant_id.map(labels))
 
 # L4: failed (400) calls avoided - reported separately, no $ / Wh attached (B0b X12)
-err = pd.DataFrame({"pct_400_actual": pct400 * 100, "pct_400_local_good": LOCAL_400 * 100, "calls": calls_all})
-err["failed_400_calls_avoided_30d"] = ((pct400 - LOCAL_400).clip(lower=0) * calls_all).round().where(err.index.isin(OUTLIERS), 0)
+err = pd.DataFrame({"pct_400_actual": pct400 * 100, "pct_400_local_good": PROVIDER_OF.map(LOCAL_400) * 100, "calls": calls_all})
+err["failed_400_calls_avoided_30d"] = ((pct400 - PROVIDER_OF.map(LOCAL_400)).clip(lower=0) * calls_all).round().where(err.index.isin(OUTLIERS), 0)
 
 out_dir = ROOT / "data-clean"
 res.round(4).to_csv(out_dir / f"scenarios_by_tenant__{tag}.csv", index=False)
@@ -195,9 +202,10 @@ err.round(3).to_csv(out_dir / f"scenario_errors_avoided__{tag}.csv")
 
 pd.set_option("display.width", 250); pd.set_option("display.max_columns", 20)
 print(f"Pricing: {pricing_path.name}")
-print(f"Local-good targets: cache share {LOCAL_CACHE:.3%}; frontier share {LOCAL_FRONTIER}; 400 rate {LOCAL_400:.3%}")
-print("Best-tenant median prompt per model:\n", best_median.to_string())
-print("Output caps (visible tokens):\n", OUT_CAP.round(0).to_string())
+print(f"Local-good targets (same-provider average of CMU's other teams): cache share {LOCAL_CACHE}; frontier share {LOCAL_FRONTIER}; 400 rate {LOCAL_400}")
+print("Average baseline median prompt per model:\n", best_median.to_string())
+print(f"Routing ceiling (data, not a target): {ROUTE_CEILING:.1%} of reasoning requests had answers <= same-tenant median gpt-4o answer")
+pd.Series({"route_ceiling_share": ROUTE_CEILING}).to_csv(out_dir / "scenario_route_ceiling.csv", header=["value"])
 view = res[["tenant_id", "scenario", "cost_usd", "delta_cost_usd_pct", "kwh_central", "delta_kwh_central_pct"]]
 print("\n", view.pivot(index="scenario", columns="tenant_id", values="delta_cost_usd_pct").round(1).loc[[x[0] for x in SCEN]].to_string())
 print("\nEnergy change % (central):\n", view.pivot(index="scenario", columns="tenant_id", values="delta_kwh_central_pct").round(1).loc[[x[0] for x in SCEN]].to_string())

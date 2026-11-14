@@ -20,6 +20,8 @@ CMU Student IronViz, "Intelligence at Scale". Question: *what AI recommendations
 | `scripts/04_small_differences.py` | `small_differences.csv` (42 tests among the 4 look-alike tenants) |
 | `scripts/06_carbon.py` | `calls_costed_carbon__*.csv`, `carbon_by_tenant__*.csv` (low/central/high Wh + gCO2e) |
 | `scripts/05_local_best.py` (run after 06) | `persona_metrics.csv`, `local_best_ranking.csv`, `outliers_vs_local_good.csv` |
+| `scripts/07_scenarios.py` (after 05) | `scenarios_by_tenant__*.csv`, `scenario_errors_avoided__*.csv`, `scenario_route_ceiling.csv`. Local good = same-provider average of the other teams (D24); global good = per-unit steps, no targets (D23) |
+| `scripts/08_guidance_check.py` | `guidance_check.csv`: each team vs local good and cited provider guidance (`config/guidance_sources.csv`, D25; see process-log B0c) |
 Configs: `config/pricing_list.csv`, `config/energy_benchmarks.csv`, `config/carbon_params.csv` (see `config/README.md`).
 
 ## Decisions made (D1–D15, summary)

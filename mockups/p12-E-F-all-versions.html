@@ -279,7 +279,34 @@ svg .grid { stroke: var(--grid); }
 @media (max-width: 760px) { .two, .cards, .gloss { grid-template-columns: 1fr; } .hb, .pgroup, .wrow { grid-template-columns: 1fr; gap: 6px; } }
 
 
+/* Round 5: slope chart, 10x10 waffles, indexed bars, per-fix bars. Relies on round 4 tokens and classes. */
+.slope text.big { font-size: 13px; font-weight: 600; fill: var(--fg); }
+.wafs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+.wafs > div { display: grid; gap: 8px; justify-items: start; min-width: 0; }
+.w100 { display: grid; grid-template-columns: repeat(10, 18px); gap: 3px; }
+.w100 i { width: 18px; height: 18px; border-radius: 3px; background: var(--grid); }
+.w100 i.on { background: var(--reasoning); }
+.wbig { font-size: 30px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
+.wlab { font-size: 13px; color: var(--fg2); }
+.idx { display: grid; gap: 12px; }
+.irow { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 12px; align-items: center; }
+.irow .nm { font-size: 13.5px; font-weight: 600; }
+.irow.dim .nm { color: var(--fg2); font-weight: 500; }
+.irow .nm small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+.ibars { display: grid; gap: 3px; position: relative; }
+.ibar { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.ibar .b { height: 13px; border-radius: 0 3px 3px 0; flex: none; }
+.ibar .k { width: 46px; color: var(--muted); font-size: 11.5px; flex: none; }
+.fixes { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.fixes > div { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.fx { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 10px; align-items: center; }
+.fx .nm { font-size: 13.5px; }
+.fx .nm small { display: block; color: var(--muted); font-size: 12px; }
+@media (max-width: 760px) { .wafs, .fixes { grid-template-columns: 1fr; } .irow, .fx { grid-template-columns: 1fr; gap: 4px; } }
+
+
 body { margin: 0; }
+[hidden] { display: none !important; }
 .group { display: grid; gap: 18px; }
 .ghead { display: grid; gap: 4px; padding-top: 10px; border-top: 2px solid var(--rule); }
 .ghead h2 { font-size: 24px; }
@@ -289,6 +316,10 @@ body { margin: 0; }
 .toc a { color: var(--fg); text-decoration: none; border: 1px solid var(--rule); border-radius: 999px; padding: 2px 10px; background: var(--surface); }
 .toc a:hover, .toc a:focus-visible { border-color: var(--frontier); outline: none; }
 .toc a.new { border-color: var(--reasoning); }
+.seg { display: inline-flex; margin-top: 16px; border: 1px solid var(--rule); border-radius: 999px; padding: 3px; background: var(--surface); gap: 2px; }
+.seg button { font: inherit; font-size: 14px; font-weight: 600; border: 0; border-radius: 999px; padding: 6px 14px; background: transparent; color: var(--fg2); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.seg button:focus-visible { outline: 2px solid var(--frontier); outline-offset: 2px; }
 
 </style>
 </head>
@@ -297,14 +328,68 @@ body { margin: 0; }
   <header>
     <div class="eyebrow">Decision P12 · every version of E and F</div>
     <h1>Price tags (E) and persona habits (F): all versions</h1>
-    <p class="lede">E answers "what does a request cost?" F answers "which teams need to change?" Versions 4–6 (outlined in orange below) are the simplest: plain bars, one takeaway, and a "How to read" line. All numbers come from our pipeline (synthetic data, Oct 2026; energy is estimated).</p>
+    <p class="lede">E answers "what does a request cost?" F answers "which teams need to change?" Versions 4 and up are the simplest, each with one takeaway and a "How to read" line; 7 and 8 (outlined in orange) are the newest. All numbers come from our pipeline (synthetic data, Oct 2026; energy is estimated).</p>
+    <div class="seg" role="group" aria-label="Show options">
+      <button type="button" data-show="E" aria-pressed="true">E · price tags</button>
+      <button type="button" data-show="F" aria-pressed="false">F · persona habits</button>
+      <button type="button" data-show="all" aria-pressed="false">Both</button>
+    </div>
     <nav class="toc" aria-label="Jump to a version">
-      <div><b>E · price tags</b><a href="#opt-e">E Price tags</a><a href="#opt-e2">E2 Receipt</a><a href="#opt-e3">E3 Cost vs energy</a><a href="#opt-e4" class="new">E4 Cost of one request</a><a href="#opt-e5" class="new">E5 Requests vs bill</a><a href="#opt-e6" class="new">E6 What $10 buys</a></div>
-      <div><b>F · persona habits</b><a href="#opt-f">F Persona lanes</a><a href="#opt-f2">F2 Scorecard</a><a href="#opt-f3">F3 Distance to best</a><a href="#opt-f4" class="new">F4 Bars per habit</a><a href="#opt-f5" class="new">F5 Persona cards</a><a href="#opt-f6" class="new">F6 Today vs best</a></div>
+      <div data-g="E"><b>E · price tags</b><a href="#opt-e8r" class="new">★ E8 revised (chosen)</a><a href="#opt-e">E Price tags</a><a href="#opt-e2">E2 Receipt</a><a href="#opt-e3">E3 Cost vs energy</a><a href="#opt-e4">E4 Cost of one request</a><a href="#opt-e5">E5 Requests vs bill</a><a href="#opt-e6">E6 What $10 buys</a><a href="#opt-e7">E7 Slope</a><a href="#opt-e8">E8 Out of 100</a></div>
+      <div data-g="F"><b>F · persona habits</b><a href="#opt-f">F Persona lanes</a><a href="#opt-f2">F2 Scorecard</a><a href="#opt-f3">F3 Distance to best</a><a href="#opt-f4">F4 Bars per habit</a><a href="#opt-f5">F5 Persona cards</a><a href="#opt-f6">F6 Today vs best</a><a href="#opt-f7">F7 × CMU best</a><a href="#opt-f8">F8 Which fix helps most</a></div>
     </nav>
   </header>
-  <div class="group"><div class="ghead"><div class="eyebrow">Group E</div><h2>What one request costs</h2></div>
-  <section id="opt-e" class="panel" aria-labelledby="e-h">
+  <div class="group" data-g="E"><div class="ghead"><div class="eyebrow">Group E</div><h2>What one request costs</h2><p class="sub">The chosen design (E8, revised to compare all three model types) is first. Earlier versions follow for reference.</p></div>
+  <style>
+.e8 { --reasoning: #eb6834; --frontier: #2a78d6; --small: #1baf7a; --cellgap: 3px; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .e8 { --reasoning: #d95926; --frontier: #3987e5; --small: #199e70; } }
+:root[data-theme="dark"] .e8 { --reasoning: #d95926; --frontier: #3987e5; --small: #199e70; }
+.e8 .key { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.e8 .key > div { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 10px; align-items: start; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 8px; }
+.e8 .key i { width: 16px; height: 16px; border-radius: 3px; margin-top: 3px; }
+.e8 .key b { display: block; font-size: 14.5px; }
+.e8 .key span { font-size: 13px; color: var(--fg2); }
+.e8 .key code { font-size: 12.5px; }
+.e8 .key .pr { display: block; margin-top: 4px; font-variant-numeric: tabular-nums; color: var(--fg); font-size: 13px; }
+.e8 .grids { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
+.e8 .g { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.e8 .gt { font-family: var(--display, inherit); font-size: 18px; font-weight: 600; }
+.e8 .gt small { font-family: var(--body, inherit); font-weight: 400; font-size: 13px; color: var(--muted); }
+.e8 .w { display: grid; grid-template-columns: repeat(10, 1fr); gap: var(--cellgap); width: min(100%, 240px); aspect-ratio: 1; }
+.e8 .w i { border-radius: 3px; }
+.e8 .split { display: grid; gap: 3px; font-size: 13.5px; font-variant-numeric: tabular-nums; width: min(100%, 240px); }
+.e8 .split div { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.e8 .split i { width: 12px; height: 12px; border-radius: 2px; }
+.e8 .split b { font-weight: 600; }
+.e8 .split .hl { font-weight: 600; }
+.e8 .ann { border-left: 3px solid var(--reasoning); padding: 4px 0 4px 14px; font-size: 15.5px; max-width: 76ch; }
+.e8 .habit { background: var(--chip); border-radius: 8px; padding: 12px 16px; font-size: 14.5px; max-width: 84ch; }
+.e8 .habit .k { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; display: block; margin-bottom: 2px; }
+.e8 .foot { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 12px; display: grid; gap: 4px; }
+.e8 .foot a { color: var(--fg2); }
+@media (max-width: 720px) { .e8 .grids, .e8 .key { grid-template-columns: 1fr; } }
+</style>
+<section id="opt-e8r" class="panel e8 " aria-labelledby="e8-title" aria-describedby="e8-alt">
+  <div>
+    <div class="eyebrow">Option E8 revised · three model types compared (chosen design, D26/D27)</div>
+    <h2 id="e8-title">Out of every 100 OpenAI requests, 10 used the reasoning model, and they ran up 65 of every 100 dollars</h2>
+  </div>
+  <div class="howto"><b>How to read:</b> the three model types are compared. Each grid has 100 squares, colored by model type, so you can see how requests, cost and energy split.</div>
+  <div class="key"><div><i style="background:var(--reasoning)"></i><div><b>Reasoning model</b><span><code>o1-preview</code> · for multi-step problems</span><span class="pr">$0.282 and 6.6 Wh per request</span></div></div><div><i style="background:var(--frontier)"></i><div><b>Frontier model</b><span><code>gpt-4o</code> · for general high-quality work</span><span class="pr">$0.031 and 1.8 Wh per request</span></div></div><div><i style="background:var(--small)"></i><div><b>Small/fast model</b><span><code>gpt-4o-mini</code> · for routine tasks</span><span class="pr">$0.001 and 1.2 Wh per request</span></div></div></div>
+  <div class="grids"><div class="g"><div class="gt">Every 100 requests<small></small></div><div class="w" aria-hidden="true"><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i></div><div class="split"><div class="hl"><i style="background:var(--reasoning)"></i><span>Reasoning</span><b>10</b></div><div class=""><i style="background:var(--frontier)"></i><span>Frontier</span><b>48</b></div><div class=""><i style="background:var(--small)"></i><span>Small/fast</span><b>42</b></div></div></div><div class="g"><div class="gt">Every 100 dollars<small></small></div><div class="w" aria-hidden="true"><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--small)"></i></div><div class="split"><div class="hl"><i style="background:var(--reasoning)"></i><span>Reasoning</span><b>65</b></div><div class=""><i style="background:var(--frontier)"></i><span>Frontier</span><b>34</b></div><div class=""><i style="background:var(--small)"></i><span>Small/fast</span><b>1</b></div></div></div><div class="g"><div class="gt">Every 100 watt-hours<small> (estimated)</small></div><div class="w" aria-hidden="true"><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--reasoning)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--frontier)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i><i style="background:var(--small)"></i></div><div class="split"><div class="hl"><i style="background:var(--reasoning)"></i><span>Reasoning</span><b>32</b></div><div class=""><i style="background:var(--frontier)"></i><span>Frontier</span><b>42</b></div><div class=""><i style="background:var(--small)"></i><span>Small/fast</span><b>26</b></div></div></div></div>
+  <div class="ann">The reasoning model handled <b>10</b> of every 100 requests but cost <b>65</b> of every 100 dollars. The small/fast model handled <b>42</b> requests for about <b>1</b> dollar. A reasoning request cost about <b>$0.25</b> more and used <b>4.8 Wh</b> more (range 3.5–6.2) than a frontier request.</div>
+  <div class="habit"><span class="k">The habit that outlasts the model</span>Use a reasoning model for complex, multi-step problems. For everything else, OpenAI advises: <q>Speed and cost → GPT models are faster and tend to cost less</q>.</div>
+  <p id="e8-alt" hidden>Three 10 by 10 grids comparing three OpenAI model types in October 2026. Requests: reasoning 10, frontier 48, small/fast 42. Dollars: reasoning 65, frontier 34, small/fast 1. Estimated watt-hours: reasoning 32, frontier 42, small/fast 26.</p>
+  <div class="foot">
+    <span><b>Data:</b> CMU IronViz synthetic telemetry, Oct 1–30, 2026; 103,211 successful requests from the three OpenAI teams (the Gemini teams have no reasoning model in the data). Squares are rounded so each grid adds to 100.</span>
+    <span><b>Cost:</b> public list prices (the o1-preview price is from a third-party archive and unverified). <b>Energy:</b> estimated from Jegham et al. (2025), arXiv:2505.09598, and Elsworth et al. (2025), arXiv:2508.15734; the o1 benchmark stands in for o1-preview.</span>
+    <span><b>Guidance:</b> OpenAI, <i>Reasoning best practices</i>, <a href="https://developers.openai.com/api/docs/guides/reasoning-best-practices">developers.openai.com/api/docs/guides/reasoning-best-practices</a>, accessed Nov 14, 2026. All three models have since been retired or scheduled for retirement; the habit applies to whichever models are current.</span>
+  </div>
+  <div class="tradeoffs">
+    <div><h3>Strengths</h3><ul><li>All three model types are named, colored and explained, so the comparison is explicit.</li><li>The same 100-square format shows requests, cost and energy side by side.</li><li>Shows the small/fast model doing 42% of the work for about 1% of the cost.</li></ul></div>
+    <div><h3>Weaknesses</h3><ul><li>More to read than the orange-only version.</li><li>OpenAI only (Gemini has no reasoning model in the data).</li></ul></div>
+  </div>
+</section><section id="opt-e" class="panel" aria-labelledby="e-h">
     <div>
       <div class="eyebrow">Option E · Price tag per request</div>
       <h2 id="e-h">One reasoning request cost as much as 9 frontier requests or about 300 small/fast requests</h2>
@@ -426,9 +511,36 @@ body { margin: 0; }
     <div><h3>Strengths</h3><ul><li>Everyday framing ("what does $10 get me?") that works for students.</li><li>Squares make the difference countable, not abstract.</li></ul></div>
     <div><h3>Weaknesses</h3><ul><li>Cost only; energy isn't shown.</li><li>The small/fast row can't be drawn at the same scale.</li></ul></div>
   </div>
+</section><section id="opt-e7" class="panel" aria-labelledby="e7-h">
+  <div>
+    <div class="eyebrow">Option E7 · Slope chart</div>
+    <h2 id="e7-h">The reasoning model's share jumps from 10% of requests to 65% of the bill</h2>
+  </div>
+  <div class="howto"><b>How to read:</b> left = share of OpenAI requests, right = share of OpenAI cost. A line that rises means that model costs more than its share of use.</div>
+  <div class="scroll"><svg id="e7" class="slope" viewBox="0 0 640 300" style="min-width:520px;width:100%;max-width:720px" role="img" aria-label="Slope chart. Reasoning rises from 10 percent of requests to 65 percent of cost. Frontier falls from 48 to 34 percent. Small/fast falls from 42 to 1 percent."></svg></div>
+  <div class="tradeoffs">
+    <div><h3>Strengths</h3><ul><li>One shape tells the story: the only rising line is reasoning.</li><li>Familiar "before → after" reading.</li></ul></div>
+    <div><h3>Weaknesses</h3><ul><li>Energy isn't shown (it could be a third column).</li><li>OpenAI only.</li></ul></div>
+  </div>
+</section><section id="opt-e8" class="panel" aria-labelledby="e8-h">
+  <div>
+    <div class="eyebrow">Option E8 · Out of every 100</div>
+    <h2 id="e8-h">Out of every 100 OpenAI requests, 10 used the reasoning model, and they ran up 65 of every 100 dollars</h2>
+  </div>
+  <div class="howto"><b>How to read:</b> each grid has 100 squares. Orange squares are the reasoning model's share.</div>
+  <div class="wafs">
+    <div><div class="wbig">10</div><div class="wlab">of every 100 <b>requests</b></div><div class="w100" data-n="10" aria-label="10 of 100"></div></div>
+    <div><div class="wbig">65</div><div class="wlab">of every 100 <b>dollars</b></div><div class="w100" data-n="65" aria-label="65 of 100"></div></div>
+    <div><div class="wbig">32</div><div class="wlab">of every 100 <b>watt-hours</b> (estimated)</div><div class="w100" data-n="32" aria-label="32 of 100"></div></div>
+  </div>
+  <div class="ann">Each reasoning request answered by a frontier model instead saves about $0.25 and 4.8 Wh.</div>
+  <div class="tradeoffs">
+    <div><h3>Strengths</h3><ul><li>"Out of 100" is the most intuitive part-to-whole format.</li><li>Covers requests, cost and energy in one view.</li></ul></div>
+    <div><h3>Weaknesses</h3><ul><li>Shows only the reasoning model, not the other two.</li><li>Rounded to whole squares.</li></ul></div>
+  </div>
 </section>
   </div>
-  <div class="group"><div class="ghead"><div class="eyebrow">Group F</div><h2>Which teams need to change</h2></div>
+  <div class="group" data-g="F"><div class="ghead"><div class="eyebrow">Group F</div><h2>Which teams need to change</h2></div>
   <section id="opt-f" class="panel" aria-labelledby="f-h">
     <div>
       <div class="eyebrow">Option F · Each persona's role when models change</div>
@@ -544,6 +656,29 @@ body { margin: 0; }
   <div class="tradeoffs">
     <div><h3>Strengths</h3><ul><li>Shows the payoff, not just the problem.</li><li>Every target comes from a CMU tenant.</li></ul></div>
     <div><h3>Weaknesses</h3><ul><li>The scenario assumes habits can change without changing the work. We can't verify that from the data.</li><li>Energy only in the text.</li></ul></div>
+  </div>
+</section><section id="opt-f7" class="panel" aria-labelledby="f7-h">
+  <div>
+    <div class="eyebrow">Option F7 · Compared with CMU's best team</div>
+    <h2 id="f7-h">Dev pays 1.5 times and Sandbox 2 times what CMU's best team pays per request</h2>
+  </div>
+  <div class="howto"><b>How to read:</b> 1.0× (the line) = CMU's best team on the same provider. Bars past the line cost or use more per request than that team.</div>
+  <div class="idx" id="f7"></div>
+  <div class="tradeoffs">
+    <div><h3>Strengths</h3><ul><li>One scale (× CMU best) for both cost and energy, so no unit confusion.</li><li>Answers "how far off are we?" in one number per team.</li></ul></div>
+    <div><h3>Weaknesses</h3><ul><li>Shows the gap but not the cause.</li><li>"× best" needs the one-line explanation.</li></ul></div>
+  </div>
+</section><section id="opt-f8" class="panel" aria-labelledby="f8-h">
+  <div>
+    <div class="eyebrow">Option F8 · Which fix helps most</div>
+    <h2 id="f8-h">For Dev and Sandbox, shorter prompts are the biggest single fix for both cost and energy</h2>
+  </div>
+  <div class="howto"><b>How to read:</b> each bar is the saving if that team made one change to match CMU's best team. Longer bar = bigger saving. The fixes overlap, so they don't add up exactly.</div>
+  <div class="fixes" id="f8"></div>
+  <div class="ann">All three fixes together: Dev −31% cost, −13% energy; Sandbox −48% cost, −23% energy.</div>
+  <div class="tradeoffs">
+    <div><h3>Strengths</h3><ul><li>Turns the persona finding into a ranked to-do list.</li><li>Every target comes from a CMU team.</li></ul></div>
+    <div><h3>Weaknesses</h3><ul><li>Only covers Dev and Sandbox.</li><li>Assumes the work stays the same when habits change.</li></ul></div>
   </div>
 </section>
   </div>
@@ -789,6 +924,81 @@ facet("f3c", "prompt", 4, v => (Math.round(v*10)/10) + "×", 1.0, false, v => `$
   });
 }
 
+}
+{
+
+// ---------- E7 slope ----------
+{
+  const NS = "http://www.w3.org/2000/svg", svg = document.getElementById("e7");
+  const el = (n, a, p) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); p.appendChild(e); return e; };
+  const xl = 200, xr = 440, y = v => 270 - v/70*240;
+  el("text",{x:xl,y:16,"text-anchor":"middle",class:"big"},svg).textContent = "Share of requests";
+  el("text",{x:xr,y:16,"text-anchor":"middle",class:"big"},svg).textContent = "Share of cost";
+  [xl, xr].forEach(x => el("line",{x1:x,x2:x,y1:26,y2:276,stroke:"var(--rule)"},svg));
+  const rows = [["Reasoning","--reasoning",10,65,3],["Frontier","--frontier",48,34,2],["Small/fast","--small",42,1,2]];
+  rows.forEach(r => {
+    const g = el("g",{"data-tip":`${r[0]}: ${r[2]}% of requests, ${r[3]}% of cost`},svg);
+    el("line",{x1:xl,x2:xr,y1:y(r[2]),y2:y(r[3]),stroke:`var(${r[1]})`,"stroke-width":r[4]+1},g);
+    el("circle",{cx:xl,cy:y(r[2]),r:6,fill:`var(${r[1]})`},g);
+    el("circle",{cx:xr,cy:y(r[3]),r:6,fill:`var(${r[1]})`},g);
+    const ly = r[0] === "Small/fast" ? y(r[2]) + 6 : r[0] === "Frontier" ? y(r[2]) - 4 : y(r[2]) + 4;
+    el("text",{x:xl-12,y:ly,"text-anchor":"end",class:"big"},g).textContent = `${r[0]} ${r[2]}%`;
+    el("text",{x:xr+12,y:y(r[3])+4,class:"big"},g).textContent = `${r[3]}%`;
+  });
+}
+// ---------- E8 waffles ----------
+document.querySelectorAll(".w100").forEach(w => {
+  const n = +w.dataset.n; let h = "";
+  for (let i = 0; i < 100; i++) h += `<i${i < n ? ' class="on"' : ""}></i>`;
+  w.innerHTML = h;
+});
+// ---------- F7 indexed bars ----------
+{
+  const P = [["Sandbox Testers","Gemini",true,2.00,1.50],["Engineering / Developers","OpenAI",true,1.52,1.21],
+             ["Marketing / Communications","OpenAI",false,1.05,1.02],["Core Production Services","OpenAI",false,1.00,1.00],
+             ["Researchers (R&D)","Gemini",false,1.00,1.00],["Enterprise Production","Gemini",false,1.00,1.00]];
+  const max = 2.2, w = v => (v / max * 82) + "%", box = document.getElementById("f7");
+  const head = document.createElement("div"); head.className = "irow";
+  head.innerHTML = `<span></span><div style="position:relative;height:14px;font-size:11.5px;color:var(--muted)"><span style="position:absolute;left:calc(46px + 8px + ${1/max*82}% - 14px)">1.0×</span><span style="position:absolute;left:calc(46px + 8px + ${2/max*82}% - 14px)">2.0×</span></div>`;
+  box.appendChild(head);
+  P.forEach(p => {
+    const d = document.createElement("div"); d.className = "irow" + (p[2] ? "" : " dim");
+    const c = p[2] ? "var(--hi)" : "var(--base)";
+    d.innerHTML = `<div class="nm">${p[0]}<small>${p[1]}</small></div>
+      <div class="ibars" data-tip="${p[0]}: ${p[3].toFixed(2)}× the cost and ${p[4].toFixed(2)}× the energy per request of CMU's best ${p[1]} team">
+        <div style="position:absolute;top:-4px;bottom:-4px;left:calc(46px + 8px + ${1/max*82}%);border-left:2px solid var(--fg)"></div>
+        <div class="ibar"><span class="k">cost</span><div class="b" style="width:${w(p[3])};background:${c}"></div><span>${p[3].toFixed(1)}×</span></div>
+        <div class="ibar"><span class="k">energy</span><div class="b" style="width:${w(p[4])};background:${c};opacity:.55"></div><span>${p[4].toFixed(1)}×</span></div>
+      </div>`;
+    box.appendChild(d);
+  });
+}
+// ---------- F8 per-fix bars ----------
+{
+  const T = [["Engineering / Developers", [["Shorter prompts","match CMU's best length",21.3,11.1],["Use the frontier model less","more routine work on small/fast",8.6,1.8],["Reuse prompt text","caching like CMU's best",6.0,4.3]]],
+             ["Sandbox Testers", [["Shorter prompts","match CMU's best length",26.2,18.4],["Use the frontier model less","more routine work on small/fast",22.8,5.1],["Reuse prompt text","caching like CMU's best",11.2,7.1]]]];
+  const box = document.getElementById("f8"), max = 30;
+  T.forEach(t => {
+    const d = document.createElement("div");
+    d.innerHTML = `<div class="ct">${t[0]}</div>` + t[1].map(f => `<div class="fx" data-tip="${t[0]}, ${f[0].toLowerCase()}: −${f[2]}% cost, −${f[3]}% energy">
+      <div class="nm">${f[0]}<small>${f[1]}</small></div>
+      <div class="ibars"><div class="ibar"><span class="k">cost</span><div class="b" style="width:${f[2]/max*70}%;background:var(--hi)"></div><span>−${Math.round(f[2])}%</span></div>
+      <div class="ibar"><span class="k">energy</span><div class="b" style="width:${f[3]/max*70}%;background:var(--hi);opacity:.55"></div><span>−${Math.round(f[3])}%</span></div></div></div>`).join("");
+    box.appendChild(d);
+  });
+}
+
+}
+{
+const btns = document.querySelectorAll(".seg button");
+function show(v) {
+  document.querySelectorAll("[data-g]").forEach(g => g.hidden = !(v === "all" || g.dataset.g === v));
+  btns.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.show === v)));
+  try { localStorage.setItem("p12-show", v); } catch (e) {}
+}
+btns.forEach(b => b.addEventListener("click", () => show(b.dataset.show)));
+let start = "E"; try { start = localStorage.getItem("p12-show") || "E"; } catch (e) {}
+show(start);
 }
 {
 const tip = document.getElementById("tip");

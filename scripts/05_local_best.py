@@ -59,7 +59,10 @@ bench = {}
 for col in LOWER_BETTER + HIGHER_BETTER:
     best = (b[col].min() if col in LOWER_BETTER else b[col].max())
     bench[col] = best
-bench_prov = b.groupby("provider")[WITHIN_PROVIDER].min()
+# D24: the comparison point for outliers is now "what CMU's other teams already do" = the AVERAGE of the baseline
+# tenants on the same provider (the 4 are statistically indistinguishable, so best-of-4 was a composite of noise).
+# The best-of-4 values above are kept for reference only.
+bench_prov = b.groupby("provider")[WITHIN_PROVIDER + ["pct_400", "cache_share_pct", "pct_calls_any_cache"]].mean()
 
 pd.set_option("display.width", 260); pd.set_option("display.max_columns", 30)
 print("ALL 6 TENANTS:\n", m.round(3).to_string())
@@ -72,9 +75,12 @@ print("Local-good per provider (model-dependent metrics):\n", bench_prov.round(4
 
 gap = m.loc[OUTLIERS, ["persona_label", "provider", "pct_400", "cache_share_pct", "median_input_tokens",
                        "pct_calls_premium_model", "cost_per_success_usd", "wh_per_success_central"]].copy()
-for col in ["cost_per_success_usd", "wh_per_success_central", "median_input_tokens", "pct_calls_premium_model"]:
+for col in ["cost_per_success_usd", "wh_per_success_central", "median_input_tokens", "pct_calls_premium_model",
+            "pct_400", "cache_share_pct"]:
     gap[col + "_vs_local_good_x"] = [m.loc[t, col] / bench_prov.loc[m.loc[t, "provider"], col] for t in OUTLIERS]
-print("\nOUTLIERS vs local good (x = multiple of best-of-4 in same provider):\n", gap.round(3).to_string())
+    gap[col + "_local_good"] = [bench_prov.loc[m.loc[t, "provider"], col] for t in OUTLIERS]
+print("Local good per provider (AVERAGE of CMU's other teams, D24):\n", bench_prov.round(4).to_string())
+print("\nOUTLIERS vs local good (x = multiple of the same-provider average of CMU's other teams):\n", gap.round(3).to_string())
 
 m.round(4).to_csv(ROOT / "data-clean" / "persona_metrics.csv")
 b.round(4).to_csv(ROOT / "data-clean" / "local_best_ranking.csv")
