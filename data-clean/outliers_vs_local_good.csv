@@ -1,0 +1,3 @@
+tenant_id,persona_label,provider,pct_400,cache_share_pct,median_input_tokens,pct_calls_premium_model,cost_per_success_usd,wh_per_success_central,cost_per_success_usd_vs_local_good_x,wh_per_success_central_vs_local_good_x,median_input_tokens_vs_local_good_x,pct_calls_premium_model_vs_local_good_x
+org-engineering-dev,Engineering / Developers,openai,6.1174,2.7039,8038.0,68.7423,0.0554,2.2893,1.5232,1.2063,1.8904,1.3054
+prj-ai-sandbox-testing,Sandbox Testers,gemini,6.0256,2.4357,13985.5,64.7867,0.0212,2.5373,2.0059,1.4997,3.7881,1.3676

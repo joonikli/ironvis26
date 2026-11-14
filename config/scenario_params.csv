@@ -1,0 +1,5 @@
+param,value,note
+global_cache_share_target,0.50,"ASSUMPTION (illustrative global good): token-weighted cache share every tenant could reach by putting stable instructions/context first so provider prompt caching applies (OpenAI: automatic for prompts >=1024 tokens with identical prefixes; Gemini: context caching). No published campus-wide benchmark; swap freely"
+global_reasoning_route_share,0.50,"ASSUMPTION: share of reasoning-model (o1-preview) calls that are routine enough for a frontier model. Moved calls = the ones with the smallest visible output. Hidden reasoning tokens are dropped, visible output kept"
+global_output_cap_percentile,0.75,"ASSUMPTION: visible output capped (max_tokens) at this percentile of the baseline tenants' output for the same model. Calls already under the cap are unchanged"
+local_route_selection,smallest_output,"Calls moved down a tier (local-good model mix) are those with the smallest output = proxy for routine tasks"
